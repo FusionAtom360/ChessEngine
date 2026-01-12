@@ -8,7 +8,6 @@
 #include <stdexcept>
 #include "board/board.h"
 
-
 void generatePawnMoves(const Board &board, int sq, MoveList &moves)
 {
     int rank = sq / 8;
@@ -922,7 +921,7 @@ MoveList generateLegalMoves(Board &board)
     return legalMoves;
 }
 
-const int MATE = 100000;
+const int MATE = 32000;
 
 const int pawnPST[64] = {
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -996,8 +995,6 @@ int evaluate(const Board &board)
     int score = 0;
     searchMoveCount++;
 
-    Color stm = board.sideToMove();
-
     for (int sq = 0; sq < 64; ++sq)
     {
         const Piece &p = board.pieceAt(sq);
@@ -1034,44 +1031,55 @@ int evaluate(const Board &board)
             value = 0; // intentional
             pst = kingMidgamePST[tableSq];
             break;
-        default: 
+        default:
             break;
         }
 
         int total = value + pst;
-        score += (p.color == stm) ? total : -total;
+        score += (p.color == Color::White) ? total : -total;
     }
 
     return score;
 }
 
-int quiescence(Board &board, int alpha, int beta)
+int quiescence(Board &board, int alpha, int beta, int ply)
 {
-    int staticEval = evaluate(board);
-
-    // Fail-hard beta cutoff
-    if (staticEval >= beta)
-        return beta;
-
-    if (staticEval > alpha)
-        alpha = staticEval;
-
-    // Generate captures only
-    MoveList legalMoves = generateLegalMoves(board);
-    MoveList captureMoves;
-
-    for (Move m : legalMoves)
+    // Stand-pat only if not in check
+    if (!board.kingInCheck())
     {
-        if (m.type == MoveType::Capture) {
-            captureMoves.push_back(m);
-        }
+        int staticEval = evaluate(board);
+
+        if (staticEval >= beta)
+            return beta;
+
+        if (staticEval > alpha)
+            alpha = staticEval;
     }
 
-    // If no captures, return static eval
-    for (const Move &m : captureMoves)
+    MoveList moves;
+    if (board.kingInCheck())
+    {
+        moves = generateLegalMoves(board); // all evasions
+    }
+    else
+    {
+        MoveList legalMoves = generateLegalMoves(board);
+        for (const Move &m : legalMoves)
+            if (m.type == MoveType::Capture)
+                moves.push_back(m);
+    }
+
+    if (moves.empty())
+    {
+        if (board.kingInCheck())
+            return -MATE + ply;
+        return alpha;
+    }
+
+    for (const Move &m : moves)
     {
         board.makeMove(m);
-        int score = -quiescence(board, -beta, -alpha);
+        int score = -quiescence(board, -beta, -alpha, ply + 1);
         board.unMakeMove();
 
         if (score >= beta)
@@ -1084,11 +1092,11 @@ int quiescence(Board &board, int alpha, int beta)
     return alpha;
 }
 
-int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta)
+int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta, int ply)
 {
     if (depth == 0)
     {
-        return quiescence(board, alpha, beta);
+        return quiescence(board, alpha, beta, ply);
     }
 
     MoveList moves = generateLegalMoves(board);
@@ -1096,7 +1104,7 @@ int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta)
     if (moves.empty())
     {
         if (board.kingInCheck())
-            return -MATE + depth; // prefer faster mates
+            return -MATE + ply; // prefer faster mates
         return 0;
     }
 
@@ -1105,7 +1113,7 @@ int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta)
     for (const Move &m : moves)
     {
         board.makeMove(m);
-        int score = -negamaxAlphaBeta(board, depth - 1, -beta, -alpha);
+        int score = -negamaxAlphaBeta(board, depth - 1, -beta, -alpha, ply + 1);
         board.unMakeMove();
 
         if (score > best)
@@ -1118,7 +1126,7 @@ int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta)
             break;
     }
 
-    return best;
+    return alpha;
 }
 
 Move findBestMove(Board &board, int depth)
@@ -1138,7 +1146,7 @@ Move findBestMove(Board &board, int depth)
     for (const Move &m : moves)
     {
         board.makeMove(m);
-        int score = -negamaxAlphaBeta(board, depth - 1, -beta, -alpha);
+        int score = -negamaxAlphaBeta(board, depth - 1, -beta, -alpha, 0);
         board.unMakeMove();
 
         if (score > bestScore)
@@ -1153,6 +1161,7 @@ Move findBestMove(Board &board, int depth)
         if (alpha >= beta)
             break;
     }
+
     std::cout << bestScore << std::endl;
     return bestMove;
 }
@@ -1261,7 +1270,7 @@ int main()
 
     Board board = Board();
     board.setStateFEN("6R1/k1N5/Bq1P4/P1BQ3R/4PK2/5P2/8/4r3 w - - 19 68");
-    board.print();
+    std::cout << board.print();
 
     while (true)
     {
@@ -1269,14 +1278,14 @@ int main()
         std::cout << searchMoveCount << " searched moves \n";
         searchMoveCount = 0;
         board.makeMove(bestMove);
-        board.print();
+        std::cout << board.print();
 
         std::string userMove;
         std::cin >> userMove;
 
         Move m = parseMove(userMove, board);
         board.makeMove(m);
-        board.print();
+        std::cout << board.print();
     }
 
     return 0;

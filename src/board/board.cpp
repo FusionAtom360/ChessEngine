@@ -93,13 +93,13 @@ Board::Board() : state(), squares(), history()
 
 std::string Board::print() const
 {
-    std::string outputString = "";
+    std::string outputString;
     for (int rank = 7; rank >= 0; rank--)
     {
         for (int file = 0; file < 8; file++)
         {
             int sq = rank * 8 + file;
-            outputString += (pieceToChar(squares[sq]) + " ");
+            outputString += std::string(1, pieceToChar(squares[sq])) + " ";
         }
         outputString += (std::to_string(rank + 1) + "\n");
     }
