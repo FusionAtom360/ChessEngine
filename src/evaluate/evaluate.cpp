@@ -145,7 +145,7 @@ int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta, int ply)
             break;
     }
 
-    return alpha;
+    return best;
 }
 
 Move findBestMove(Board &board, int depth)
@@ -183,6 +183,7 @@ Move findBestMove(Board &board, int depth)
         if (alpha >= beta)
             break;
     }
+
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
     std::cout << searchMoveCount << " searched moves (" << elapsed_seconds.count() << " seconds)\n";
