@@ -15,8 +15,8 @@
                 //"-Wsign-conversion",
                 //"-Werror",
                 "-std=c++23",
-                "main.cpp",
-                "board/board.cpp",
+                "src/main.cpp",
+                "src/board/board.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
