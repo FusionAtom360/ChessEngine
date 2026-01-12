@@ -6,7 +6,6 @@
 #include <sstream>
 #include <cassert>
 #include <stdexcept>
-#include <limits>
 #include "board/board.h"
 
 
