@@ -64,8 +64,15 @@ struct Move
     PieceType promotion = PieceType::None;
 };
 
+struct ScoredMove
+{
+    Move move;
+    int score;
+};
+
 using BoardArray = std::array<Piece, 64>;
 using MoveList = std::vector<Move>;
+using ScoredMoveList = std::vector<ScoredMove>;
 
 struct UndoHistory
 {

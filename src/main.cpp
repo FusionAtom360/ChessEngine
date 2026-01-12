@@ -115,7 +115,7 @@ int main()
 {
 
     Board board = Board();
-    board.setStateFEN("6R1/k1N5/Bq1P4/P1BQ3R/4PK2/5P2/8/4r3 w - - 19 68");
+    //board.setStateFEN("6R1/k1N5/Bq1P4/P1BQ3R/4PK2/5P2/8/4r3 w - - 19 68");
     std::cout << board.print();
 
     while (true)

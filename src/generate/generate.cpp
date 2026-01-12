@@ -1,4 +1,5 @@
 #include "generate.h"
+#include <algorithm>
 
 void generatePawnMoves(const Board &board, int sq, MoveList &moves)
 {
@@ -911,4 +912,74 @@ MoveList generateLegalMoves(Board &board)
     }
 
     return legalMoves;
+}
+
+int pieceValue(PieceType type)
+{
+    switch (type)
+    {
+    case PieceType::Pawn:
+        return 100;
+    case PieceType::Knight:
+        return 320;
+    case PieceType::Bishop:
+        return 330;
+    case PieceType::Rook:
+        return 500;
+    case PieceType::Queen:
+        return 900;
+    case PieceType::King:
+        return 20000;
+    case PieceType::None:
+        return 0;
+    }
+    return 0;
+}
+
+int scoreMove(const Move &m, const Board &board)
+{
+    int score = 0;
+
+    if (board.pieceAt(m.to).type != PieceType::None)
+    {
+        // MVV-LVA: victim value - attacker value
+        int victimValue = pieceValue(board.pieceAt(m.to).type);
+        int attackerValue = pieceValue(board.pieceAt(m.from).type);
+        score += (victimValue * 10 - attackerValue);
+    }
+
+    if (m.promotion != PieceType::None)
+    {
+        score += 900; // prefer queen promotions
+    }
+
+    Board test = board;
+    test.makeMove(m);
+    if (test.kingInCheck(oppositeColor(board.sideToMove())))
+    {
+        score += 50;
+    }
+
+    return score;
+}
+
+MoveList generateOrderedMoves(Board &board)
+{
+    MoveList moves = generateLegalMoves(board);
+
+    ScoredMoveList scoredMoves;
+    for (Move m : moves)
+    {
+        scoredMoves.push_back({m, scoreMove(m, board)});
+    }
+
+    std::sort(scoredMoves.begin(), scoredMoves.end(),
+              [](const ScoredMove &a, const ScoredMove &b)
+              { return a.score > b.score; }); // descending
+
+    MoveList ordered;
+    for (ScoredMove m : scoredMoves)
+        ordered.push_back(m.move);
+
+    return ordered;
 }

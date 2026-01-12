@@ -78,11 +78,11 @@ int quiescence(Board &board, int alpha, int beta, int ply)
     MoveList moves;
     if (board.kingInCheck())
     {
-        moves = generateLegalMoves(board); // all evasions
+        moves = generateOrderedMoves(board); // all evasions
     }
     else
     {
-        MoveList legalMoves = generateLegalMoves(board);
+        MoveList legalMoves = generateOrderedMoves(board);
         for (const Move &m : legalMoves)
             if (m.type == MoveType::Capture)
                 moves.push_back(m);

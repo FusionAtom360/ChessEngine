@@ -1,7 +1,8 @@
 #include <string>
 #include <sstream>
 #include <cassert>
-#include <board/board.h>
+#include "board/board.h"
+#include <iostream>
 
 Color oppositeColor(const Color &color)
 {
@@ -710,6 +711,29 @@ bool Board::isPieceAttacked(int sq) const
         }
     }
 
+    // opponent king attacks
+    int kingOffsets[8] = {-9, -8, -7, -1, 1, 7, 8, 9};
+    for (int offset : kingOffsets)
+    {
+        int targetSq = sq + offset;
+
+        if (targetSq < 0 || targetSq > 63)
+            continue;
+
+        int targetRank = targetSq / 8;
+        int targetFile = targetSq % 8;
+        int sqRank = sq / 8;
+        int sqFile = sq % 8;
+
+        // make sure we don't wrap around the board horizontally
+        if (std::abs(targetFile - sqFile) > 1)
+            continue;
+
+        const Piece &p = pieceAt(targetSq);
+        if (p.type == PieceType::King && p.color == opponentColor)
+            return true;
+    }
+
     return false;
 }
 
@@ -722,6 +746,8 @@ int Board::kingLocation(Color color) const
             return sq;
         }
     }
+    printHistoryDebug();
+    std::cout << print();
     throw std::runtime_error("King not found on board");
 }
 
@@ -736,7 +762,7 @@ void Board::printHistoryDebug() const
     {
         Board temp = Board();
         temp.squares = entry;
-        temp.print();
+        std::cout << temp.print();
     }
 }
 
