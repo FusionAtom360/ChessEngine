@@ -19,6 +19,8 @@
                 "main.cpp",
                 "board/board.cpp",
                 "generate/generate.cpp",
+                "evaluate/evaluate.cpp",
+                "utils/utils.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
