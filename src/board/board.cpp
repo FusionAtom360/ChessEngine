@@ -720,9 +720,9 @@ bool Board::isPieceAttacked(int sq) const
         if (targetSq < 0 || targetSq > 63)
             continue;
 
-        int targetRank = targetSq / 8;
+        //int targetRank = targetSq / 8;
         int targetFile = targetSq % 8;
-        int sqRank = sq / 8;
+        //int sqRank = sq / 8;
         int sqFile = sq % 8;
 
         // make sure we don't wrap around the board horizontally
