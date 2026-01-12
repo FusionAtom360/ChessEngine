@@ -15,13 +15,15 @@
                 //"-Wsign-conversion",
                 //"-Werror",
                 "-std=c++23",
+                "-I${workspaceFolder}/src",
                 "main.cpp",
                 "board/board.cpp",
+                "generate/generate.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}/src"
             },
             "problemMatcher": [
                 "$gcc"

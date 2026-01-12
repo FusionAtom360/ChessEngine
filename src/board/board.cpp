@@ -1,7 +1,7 @@
-#include "board.h"
 #include <string>
 #include <sstream>
 #include <cassert>
+#include <board/board.h>
 
 Color oppositeColor(const Color &color)
 {
