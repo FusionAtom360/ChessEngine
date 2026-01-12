@@ -121,8 +121,6 @@ int main()
     while (true)
     {
         Move bestMove = findBestMove(board, 5);
-        std::cout << searchMoveCount << " searched moves \n";
-        searchMoveCount = 0;
         board.makeMove(bestMove);
         std::cout << board.print();
 
