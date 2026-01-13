@@ -106,6 +106,9 @@ std::string Board::print() const
     }
     outputString += "a b c d e f g h\n";
 
+    if (kingInCheck(sideToMove())) {
+        outputString += "Check | ";
+    }
     outputString += ("Move: " + std::to_string(state.fullMoveNumber) + " | ");
     if (state.sideToMove == Color::Black)
     {
@@ -746,8 +749,6 @@ int Board::kingLocation(Color color) const
             return sq;
         }
     }
-    printHistoryDebug();
-    std::cout << print();
     throw std::runtime_error("King not found on board");
 }
 

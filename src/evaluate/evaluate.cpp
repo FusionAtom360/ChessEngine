@@ -82,10 +82,7 @@ int quiescence(Board &board, int alpha, int beta, int ply)
     }
     else
     {
-        MoveList legalMoves = generateOrderedMoves(board);
-        for (const Move &m : legalMoves)
-            if (m.type == MoveType::Capture)
-                moves.push_back(m);
+        MoveList moves = generateOrderedCaptureMoves(board);
     }
 
     if (moves.empty())

@@ -50,7 +50,7 @@ void generatePawnMoves(const Board &board, int sq, MoveList &moves)
                 moves.push_back({sq, oneAhead, MoveType::Standard});
                 if (twoAhead >= 0 && twoAhead <= 63 && board.isEmpty(twoAhead) && rank == doubleMoveRank)
                 {
-                    moves.push_back({sq, twoAhead, MoveType::Standard});
+                    moves.push_back({sq, twoAhead, MoveType::DoublePawnPush});
                 }
             }
         }
@@ -914,6 +914,768 @@ MoveList generateLegalMoves(Board &board)
     return legalMoves;
 }
 
+void generatePawnCaptureMoves(const Board &board, int sq, MoveList &moves)
+{
+    int rank = sq / 8;
+    int file = sq % 8;
+    int leftCapture;
+    int rightCapture;
+    int promotionRank;
+    Color pawnColor = board.pieceAt(sq).color;
+    Color opponentColor = oppositeColor(pawnColor);
+
+    if (pawnColor == Color::White)
+    {
+        leftCapture = sq + 7;
+        rightCapture = sq + 9;
+        promotionRank = 6;
+    }
+    else
+    {
+        leftCapture = sq - 9;
+        rightCapture = sq - 7;
+        promotionRank = 1;
+    }
+
+    if ((pawnColor == Color::White && rank < 7) || (pawnColor == Color::Black && rank > 0))
+    {
+        if (file > 0)
+        {
+            // if black piece available to capture
+            if (!board.isEmpty(leftCapture) && board.pieceAt(leftCapture).color == opponentColor)
+            {
+                if (rank == promotionRank)
+                {
+                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Rook});
+                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Knight});
+                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Bishop});
+                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Queen});
+                }
+                else
+                {
+                    moves.push_back({sq, leftCapture, MoveType::Capture});
+                }
+            }
+            else if (leftCapture == board.enPassantSquare())
+            {
+                moves.push_back({sq, leftCapture, MoveType::EnPassant});
+            }
+        }
+
+        if (file < 7)
+        {
+            // if black piece available to capture
+            if (!board.isEmpty(rightCapture) && board.pieceAt(rightCapture).color == opponentColor)
+            {
+                if (rank == promotionRank)
+                {
+                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Rook});
+                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Knight});
+                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Bishop});
+                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Queen});
+                }
+                else
+                {
+                    moves.push_back({sq, rightCapture, MoveType::Capture});
+                }
+            }
+            else if (rightCapture == board.enPassantSquare())
+            {
+                moves.push_back({sq, rightCapture, MoveType::EnPassant});
+            }
+        }
+    }
+}
+
+void generateRookCaptureMoves(const Board &board, int sq, MoveList &moves)
+{
+    int rank = sq / 8;
+    int nextSquare;
+    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+
+    // up
+    nextSquare = sq;
+    while (true)
+    {
+        nextSquare += 8;
+        if (nextSquare <= 63 && nextSquare >= 0)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // down
+    nextSquare = sq;
+    while (true)
+    {
+        nextSquare -= 8;
+        if (nextSquare <= 63 && nextSquare >= 0)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // left
+    nextSquare = sq;
+    while (true)
+    {
+        nextSquare -= 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == rank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // right
+    nextSquare = sq;
+    while (true)
+    {
+        nextSquare += 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == rank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void generateKnightCaptureMoves(const Board &board, int sq, MoveList &moves)
+{
+    int startRank = sq / 8;
+    int nextSquare;
+    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+
+    nextSquare = sq + 6;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq + 10;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq + 15;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 2)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq + 17;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 2)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq - 6;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq - 10;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq - 15;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 2)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq - 17;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 2)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+}
+
+void generateBishopCaptureMoves(const Board &board, int sq, MoveList &moves)
+{
+    int startRank = sq / 8;
+    int nextSquare;
+    int nextRank;
+    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+
+    // up left
+    nextSquare = sq;
+    nextRank = startRank;
+    while (true)
+    {
+        nextSquare += 7;
+        nextRank += 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // up right
+    nextSquare = sq;
+    nextRank = startRank;
+    while (true)
+    {
+        nextSquare += 9;
+        nextRank += 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // down left
+    nextSquare = sq;
+    nextRank = startRank;
+    while (true)
+    {
+        nextSquare -= 9;
+        nextRank -= 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // down right
+    nextSquare = sq;
+    nextRank = startRank;
+    while (true)
+    {
+        nextSquare -= 7;
+        nextRank -= 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void generateQueenCaptureMoves(const Board &board, int sq, MoveList &moves)
+{
+    int startRank = sq / 8;
+    int nextSquare;
+    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+
+    // up
+    nextSquare = sq;
+    while (true)
+    {
+        nextSquare += 8;
+        if (nextSquare <= 63 && nextSquare >= 0)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // down
+    nextSquare = sq;
+    while (true)
+    {
+        nextSquare -= 8;
+        if (nextSquare <= 63 && nextSquare >= 0)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // left
+    nextSquare = sq;
+    while (true)
+    {
+        nextSquare -= 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // right
+    nextSquare = sq;
+    while (true)
+    {
+        nextSquare += 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    int nextRank;
+
+    // up left
+    nextSquare = sq;
+    nextRank = startRank;
+    while (true)
+    {
+        nextSquare += 7;
+        nextRank += 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // up right
+    nextSquare = sq;
+    nextRank = startRank;
+    while (true)
+    {
+        nextSquare += 9;
+        nextRank += 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // down left
+    nextSquare = sq;
+    nextRank = startRank;
+    while (true)
+    {
+        nextSquare -= 9;
+        nextRank -= 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // down right
+    nextSquare = sq;
+    nextRank = startRank;
+    while (true)
+    {
+        nextSquare -= 7;
+        nextRank -= 1;
+        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        {
+            if (!board.isEmpty(nextSquare))
+            {
+                if (board.pieceAt(nextSquare).color == opponentColor)
+                {
+                    moves.push_back({sq, nextSquare, MoveType::Capture});
+                    break;
+                }
+                // break if white piece
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void generateKingCaptureMoves(const Board &board, int sq, MoveList &moves)
+{
+    int startRank = sq / 8;
+    int nextSquare;
+    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+
+    nextSquare = sq + 1;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq + 7;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq + 8;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq + 9;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq - 1;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq - 7;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq - 8;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+
+    nextSquare = sq - 9;
+    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
+    {
+        if (!board.isEmpty(nextSquare))
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+            {
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            }
+        }
+    }
+}
+
+MoveList generatePseudoLegalCaptureMoves(const Board &board)
+{
+    MoveList moves;
+
+    for (int sq = 0; sq < 64; sq++)
+    {
+        Piece p = board.pieceAt(sq);
+
+        if (p.color != board.sideToMove())
+        {
+            continue;
+        }
+
+        switch (p.type)
+        {
+        case (PieceType::None):
+            break;
+        case (PieceType::Pawn):
+            generatePawnCaptureMoves(board, sq, moves);
+            break;
+        case (PieceType::Rook):
+            generateRookCaptureMoves(board, sq, moves);
+            break;
+        case (PieceType::Knight):
+            generateKnightCaptureMoves(board, sq, moves);
+            break;
+        case (PieceType::Bishop):
+            generateBishopCaptureMoves(board, sq, moves);
+            break;
+        case (PieceType::Queen):
+            generateQueenCaptureMoves(board, sq, moves);
+            break;
+        case (PieceType::King):
+            generateKingCaptureMoves(board, sq, moves);
+            break;
+        }
+    }
+
+    return moves;
+}
+
+MoveList generateCaptureMoves(Board &board)
+{
+    MoveList pseudoLegalCaptureMoves = generatePseudoLegalCaptureMoves(board);
+    MoveList legalCaptureMoves;
+
+    for (Move m : pseudoLegalCaptureMoves)
+    {
+        board.makeMove(m);
+        if (!board.kingInCheck(oppositeColor(board.sideToMove())))
+        {
+            legalCaptureMoves.push_back(m);
+        }
+        board.unMakeMove();
+    }
+
+    return legalCaptureMoves;
+}
+
 int pieceValue(PieceType type)
 {
     switch (type)
@@ -966,6 +1728,27 @@ int scoreMove(const Move &m, const Board &board)
 MoveList generateOrderedMoves(Board &board)
 {
     MoveList moves = generateLegalMoves(board);
+
+    ScoredMoveList scoredMoves;
+    for (Move m : moves)
+    {
+        scoredMoves.push_back({m, scoreMove(m, board)});
+    }
+
+    std::sort(scoredMoves.begin(), scoredMoves.end(),
+              [](const ScoredMove &a, const ScoredMove &b)
+              { return a.score > b.score; }); // descending
+
+    MoveList ordered;
+    for (ScoredMove m : scoredMoves)
+        ordered.push_back(m.move);
+
+    return ordered;
+}
+
+MoveList generateOrderedCaptureMoves(Board &board)
+{
+    MoveList moves = generateCaptureMoves(board);
 
     ScoredMoveList scoredMoves;
     for (Move m : moves)

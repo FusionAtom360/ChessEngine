@@ -124,12 +124,10 @@ int main()
         board.makeMove(bestMove);
         std::cout << board.print();
 
-        std::string userMove;
-        std::cin >> userMove;
+        // std::string userMove;
+        // std::cin >> userMove;
 
-        Move m = parseMove(userMove, board);
-        board.makeMove(m);
-        std::cout << board.print();
+        // Move m = parseMove(userMove, board);
     }
 
     return 0;
