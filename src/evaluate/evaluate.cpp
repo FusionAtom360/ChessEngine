@@ -3,6 +3,8 @@
 #include <chrono>
 
 int searchMoveCount = 0;
+int maxDepth;
+int startDepth;
 
 int mirror(int sq)
 {
@@ -63,6 +65,10 @@ int evaluate(const Board &board)
 
 int quiescence(Board &board, int alpha, int beta, int ply)
 {
+    if (ply + startDepth > maxDepth)
+    {
+        maxDepth = ply + 5;
+    }
     // Stand-pat only if not in check
     if (!board.kingInCheck())
     {
@@ -148,6 +154,8 @@ int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta, int ply)
 Move findBestMove(Board &board, int depth)
 {
     searchMoveCount = 0;
+    startDepth = depth;
+    maxDepth = depth;
     auto start = std::chrono::steady_clock::now();
 
     const int NEG_INF = -1000000;
@@ -183,6 +191,12 @@ Move findBestMove(Board &board, int depth)
 
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << searchMoveCount << " searched moves (" << elapsed_seconds.count() << " seconds)\n";
+    std::cout << searchMoveCount << " searched moves (depth " << maxDepth << ", " << elapsed_seconds.count() << " seconds)\n";
     return bestMove;
+}
+
+bool gameOver(Board &board)
+{
+    MoveList legalMoves = generateLegalMoves(board);
+    return legalMoves.empty();
 }

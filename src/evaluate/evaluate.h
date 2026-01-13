@@ -74,3 +74,5 @@ int quiescence(Board &board, int alpha, int beta, int ply);
 int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta, int ply);
 
 Move findBestMove(Board &board, int depth);
+
+bool gameOver(Board &board);

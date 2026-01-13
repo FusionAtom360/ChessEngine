@@ -81,7 +81,6 @@ struct UndoHistory
     UndoHistory() : stateHistory(), arrayHistory() {}
 };
 
-
 Color oppositeColor(const Color &color);
 
 class Board
@@ -127,4 +126,6 @@ public:
     void unMakeMove();
 
     std::string indexToCoords(int sq);
+
+    std::string FEN();
 };

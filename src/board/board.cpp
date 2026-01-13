@@ -106,7 +106,8 @@ std::string Board::print() const
     }
     outputString += "a b c d e f g h\n";
 
-    if (kingInCheck(sideToMove())) {
+    if (kingInCheck(sideToMove()))
+    {
         outputString += "Check | ";
     }
     outputString += ("Move: " + std::to_string(state.fullMoveNumber) + " | ");
@@ -723,9 +724,9 @@ bool Board::isPieceAttacked(int sq) const
         if (targetSq < 0 || targetSq > 63)
             continue;
 
-        //int targetRank = targetSq / 8;
+        // int targetRank = targetSq / 8;
         int targetFile = targetSq % 8;
-        //int sqRank = sq / 8;
+        // int sqRank = sq / 8;
         int sqFile = sq % 8;
 
         // make sure we don't wrap around the board horizontally
@@ -923,4 +924,70 @@ std::string Board::indexToCoords(int sq)
     default:
         return "";
     }
+}
+
+std::string Board::FEN()
+{
+    std::string outputString;
+    int emptyCount;
+    for (int rank = 7; rank >= 0; rank--)
+    {
+        for (int file = 0; file < 8; file++)
+        {
+            Piece p = pieceAt(rank * 8 + file);
+            if (p.type != PieceType::None)
+            {
+                if (emptyCount > 0)
+                {
+                    outputString += std::to_string(emptyCount);
+                }
+                outputString += pieceToChar(p);
+                emptyCount = 0;
+            }
+            else
+            {
+                emptyCount++;
+            }
+        }
+        if (emptyCount > 0)
+        {
+            outputString += std::to_string(emptyCount);
+        }
+        emptyCount = 0;
+        if (rank > 0)
+        {
+            outputString += "/";
+        }
+    }
+    if (state.sideToMove == Color::White)
+    {
+        outputString += " w ";
+    }
+    else {
+        outputString += " b ";
+    }
+    if (state.castling.whiteKingSide) {
+        outputString += "K";
+    }
+    if (state.castling.whiteQueenSide) {
+        outputString += "Q";
+    } 
+    if (state.castling.blackKingSide) {
+        outputString += "k";
+    } 
+    if (state.castling.blackQueenSide) {
+        outputString += "q";
+    } 
+    if (!state.castling.whiteKingSide && !state.castling.whiteQueenSide && !state.castling.blackKingSide && !state.castling.blackQueenSide) {
+        outputString += "-";
+    }
+    if (state.enPassantSquare != -1) {
+        outputString += " " + indexToCoords(state.enPassantSquare) + " ";
+    }
+    else {
+        outputString += " - ";
+    }
+    outputString += std::to_string(state.halfMoveClock) + " ";
+    outputString += std::to_string(state.fullMoveNumber);
+    return outputString;
 }
