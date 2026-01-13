@@ -128,4 +128,6 @@ public:
     std::string indexToCoords(int sq);
 
     std::string FEN();
+
+    int halfMoveCounter();
 };

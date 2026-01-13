@@ -991,3 +991,7 @@ std::string Board::FEN()
     outputString += std::to_string(state.fullMoveNumber);
     return outputString;
 }
+
+int Board::halfMoveCounter() {
+    return state.halfMoveClock;
+}

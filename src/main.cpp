@@ -121,7 +121,7 @@ int main()
 
     while (!gameOver(board))
     {
-        Move bestMove = findBestMove(board, 4);
+        Move bestMove = findBestMove(board, 1);
         board.makeMove(bestMove);
         std::cout << board.print();
 
@@ -129,6 +129,21 @@ int main()
         // std::cin >> userMove;
 
         // Move m = parseMove(userMove, board);
+    }
+    if (board.kingInCheck())
+    {
+        if (board.sideToMove() == Color::White)
+        {
+            std::cout << "White wins by checkmate";
+        }
+        else
+        {
+            std::cout << "Black wins by checkmate";
+        }
+    }
+    else
+    {
+        std::cout << "Stalemate";
     }
 
     return 0;

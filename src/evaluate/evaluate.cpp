@@ -198,5 +198,11 @@ Move findBestMove(Board &board, int depth)
 bool gameOver(Board &board)
 {
     MoveList legalMoves = generateLegalMoves(board);
-    return legalMoves.empty();
+    if (legalMoves.empty()) {
+        return true;
+    }
+    if (board.halfMoveCounter() >= 50) {
+        return true;
+    }
+    return false;
 }
