@@ -1,856 +1,238 @@
 #include "generate.h"
 #include <algorithm>
 
-void generatePawnMoves(const Board &board, int sq, MoveList &moves)
+static std::array<int, 2> pawnDirections = {7, 9};
+static std::array<int, 8> knightDirections = {-17, -15, -10, -6, 6, 10, 15, 17};
+static std::array<int, 8> kingDirections = {-9, -8, -7, -1, 1, 7, 8, 9};
+static std::array<int, 4> rookDirections = {-8, -1, 1, 8};
+static std::array<int, 4> bishopDirections = {-9, -7, 7, 9};
+static std::array<int, 8> queenDirections = {-9, -8, -7, -1, 1, 7, 8, 9};
+
+bool squareOnBoard(const int &sq)
+{
+    return (sq >= 0 && sq < 64);
+}
+
+void generatePawnMoves(const Board &board, const int &sq, MoveList &moves)
 {
     int rank = sq / 8;
     int file = sq % 8;
-    int oneAhead;
-    int twoAhead;
-    int leftCapture;
-    int rightCapture;
-    int promotionRank;
-    int doubleMoveRank;
     Color pawnColor = board.pieceAt(sq).color;
     Color opponentColor = oppositeColor(pawnColor);
 
-    if (pawnColor == Color::White)
+    int oneAhead = (pawnColor == Color::White) ? sq + 8 : sq - 8;
+    int twoAhead = (pawnColor == Color::White) ? sq + 16 : sq - 16;
+    // int leftCapture = (pawnColor == Color::White) ? sq + 7 : sq - 9;
+    // int rightCapture = (pawnColor == Color::White) ? sq + 9 : sq - 7;
+    int nextSquare;
+    int nextFile;
+
+    int promotionRank = (pawnColor == Color::White) ? 6 : 1;
+    int doubleMoveRank = (pawnColor == Color::White) ? 1 : 6;
+
+    if (squareOnBoard(oneAhead) && board.isEmpty(oneAhead))
     {
-        oneAhead = sq + 8;
-        twoAhead = sq + 16;
-        leftCapture = sq + 7;
-        rightCapture = sq + 9;
-        promotionRank = 6;
-        doubleMoveRank = 1;
-    }
-    else
-    {
-        oneAhead = sq - 8;
-        twoAhead = sq - 16;
-        leftCapture = sq - 9;
-        rightCapture = sq - 7;
-        promotionRank = 1;
-        doubleMoveRank = 6;
+        // Promotion moves
+        if (rank == promotionRank)
+        {
+            moves.push_back({sq, oneAhead, MoveType::Promotion, PieceType::Rook});
+            moves.push_back({sq, oneAhead, MoveType::Promotion, PieceType::Knight});
+            moves.push_back({sq, oneAhead, MoveType::Promotion, PieceType::Bishop});
+            moves.push_back({sq, oneAhead, MoveType::Promotion, PieceType::Queen});
+        }
+        else
+        {
+            // Single pawn push
+            moves.push_back({sq, oneAhead, MoveType::Standard});
+            // Double pawn push
+            if (squareOnBoard(twoAhead) && board.isEmpty(twoAhead) && rank == doubleMoveRank)
+            {
+                moves.push_back({sq, twoAhead, MoveType::DoublePawnPush});
+            }
+        }
     }
 
-    if ((pawnColor == Color::White && rank < 7) || (pawnColor == Color::Black && rank > 0))
+    for (int d : pawnDirections)
     {
-        if (oneAhead >= 0 && oneAhead <= 63 && board.isEmpty(oneAhead))
+        nextSquare = (pawnColor == Color::White) ? sq + d : sq - d;
+
+        if (!squareOnBoard(nextSquare))
         {
-            // promotable
+            continue;
+        }
+
+        nextFile = nextSquare % 8;
+
+        if (nextFile - file > 1 || file - nextFile > 1)
+        {
+            continue;
+        }
+
+        if (board.isEmpty(nextSquare))
+        {
+            if (nextSquare == board.enPassantSquare())
+            {
+                moves.push_back({sq, nextSquare, MoveType::EnPassant});
+            }
+            continue;
+        }
+
+        if (board.pieceAt(nextSquare).color == opponentColor)
+        {
             if (rank == promotionRank)
             {
-                moves.push_back({sq, oneAhead, MoveType::Promotion, PieceType::Rook});
-                moves.push_back({sq, oneAhead, MoveType::Promotion, PieceType::Knight});
-                moves.push_back({sq, oneAhead, MoveType::Promotion, PieceType::Bishop});
-                moves.push_back({sq, oneAhead, MoveType::Promotion, PieceType::Queen});
+                moves.push_back({sq, nextSquare, MoveType::Promotion, PieceType::Rook});
+                moves.push_back({sq, nextSquare, MoveType::Promotion, PieceType::Knight});
+                moves.push_back({sq, nextSquare, MoveType::Promotion, PieceType::Bishop});
+                moves.push_back({sq, nextSquare, MoveType::Promotion, PieceType::Queen});
             }
             else
             {
-                moves.push_back({sq, oneAhead, MoveType::Standard});
-                if (twoAhead >= 0 && twoAhead <= 63 && board.isEmpty(twoAhead) && rank == doubleMoveRank)
-                {
-                    moves.push_back({sq, twoAhead, MoveType::DoublePawnPush});
-                }
-            }
-        }
-        if (file > 0)
-        {
-            // if black piece available to capture
-            if (!board.isEmpty(leftCapture) && board.pieceAt(leftCapture).color == opponentColor)
-            {
-                if (rank == promotionRank)
-                {
-                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Rook});
-                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Knight});
-                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Bishop});
-                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Queen});
-                }
-                else
-                {
-                    moves.push_back({sq, leftCapture, MoveType::Capture});
-                }
-            }
-            else if (leftCapture == board.enPassantSquare())
-            {
-                moves.push_back({sq, leftCapture, MoveType::EnPassant});
-            }
-        }
-
-        if (file < 7)
-        {
-            // if black piece available to capture
-            if (!board.isEmpty(rightCapture) && board.pieceAt(rightCapture).color == opponentColor)
-            {
-                if (rank == promotionRank)
-                {
-                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Rook});
-                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Knight});
-                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Bishop});
-                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Queen});
-                }
-                else
-                {
-                    moves.push_back({sq, rightCapture, MoveType::Capture});
-                }
-            }
-            else if (rightCapture == board.enPassantSquare())
-            {
-                moves.push_back({sq, rightCapture, MoveType::EnPassant});
+                moves.push_back({sq, nextSquare, MoveType::Capture});
             }
         }
     }
 }
 
-void generateRookMoves(const Board &board, int sq, MoveList &moves)
+template <int numDirections>
+void generateSliderMoves(const Board &board, const int &sq, MoveList &moves, const std::array<int, numDirections> &directions)
 {
-    int rank = sq / 8;
+    Color pieceColor = board.pieceAt(sq).color;
+    Color opponentColor = oppositeColor(pieceColor);
     int nextSquare;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+    int prevSquare;
+    int prevFile;
+    int nextFile;
 
-    // up
-    nextSquare = sq;
-    while (true)
+    for (int d : directions)
     {
-        nextSquare += 8;
-        if (nextSquare <= 63 && nextSquare >= 0)
+        nextSquare = sq;
+        while (true)
         {
-            if (!board.isEmpty(nextSquare))
+            prevSquare = nextSquare;
+            nextSquare += d;
+
+            if (!squareOnBoard(nextSquare))
+                break;
+
+            prevFile = prevSquare % 8;
+            nextFile = nextSquare % 8;
+
+            if (nextFile - prevFile > 1 || prevFile - nextFile > 1)
+                break;
+
+            if (board.isEmpty(nextSquare))
+            {
+                moves.push_back({sq, nextSquare, MoveType::Standard});
+            }
+            else
             {
                 if (board.pieceAt(nextSquare).color == opponentColor)
-                {
                     moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
                 break;
             }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare -= 8;
-        if (nextSquare <= 63 && nextSquare >= 0)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // left
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == rank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // right
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == rank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
         }
     }
 }
 
-void generateKnightMoves(const Board &board, int sq, MoveList &moves)
+void generateKnightMoves(const Board &board, const int &sq, MoveList &moves)
 {
-    int startRank = sq / 8;
     int nextSquare;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+    int file = sq % 8;
+    int nextFile;
+    Color knightColor = board.pieceAt(sq).color;
+    Color opponentColor = oppositeColor(knightColor);
 
-    nextSquare = sq + 6;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
+    for (int d : knightDirections)
     {
-        if (!board.isEmpty(nextSquare))
+        nextSquare = sq + d;
+
+        if (!squareOnBoard(nextSquare))
         {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
+            continue;
         }
-        else
+
+        nextFile = nextSquare % 8;
+
+        if (nextFile - file > 2 || file - nextFile > 2)
+        {
+            continue;
+        }
+
+        if (board.isEmpty(nextSquare))
         {
             moves.push_back({sq, nextSquare, MoveType::Standard});
         }
-    }
-
-    nextSquare = sq + 10;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
         else
         {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq + 15;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 2)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
             if (board.pieceAt(nextSquare).color == opponentColor)
-            {
                 moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq + 17;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 2)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq - 6;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq - 10;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq - 15;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 2)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq - 17;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 2)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
+            continue;
         }
     }
 }
 
-void generateBishopMoves(const Board &board, int sq, MoveList &moves)
+void generateKingMoves(const Board &board, const int &sq, MoveList &moves)
 {
-    int startRank = sq / 8;
     int nextSquare;
-    int nextRank;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
-
-    // up left
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare += 7;
-        nextRank += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // up right
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare += 9;
-        nextRank += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down left
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare -= 9;
-        nextRank -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down right
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare -= 7;
-        nextRank -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-}
-
-void generateQueenMoves(const Board &board, int sq, MoveList &moves)
-{
-    int startRank = sq / 8;
-    int nextSquare;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
-
-    // up
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare += 8;
-        if (nextSquare <= 63 && nextSquare >= 0)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare -= 8;
-        if (nextSquare <= 63 && nextSquare >= 0)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // left
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // right
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    int nextRank;
-
-    // up left
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare += 7;
-        nextRank += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // up right
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare += 9;
-        nextRank += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down left
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare -= 9;
-        nextRank -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down right
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare -= 7;
-        nextRank -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-        else
-        {
-            break;
-        }
-    }
-}
-
-void generateKingMoves(const Board &board, int sq, MoveList &moves)
-{
-    int startRank = sq / 8;
-    int nextSquare;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
-
-    nextSquare = sq + 1;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq + 7;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq + 8;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq + 9;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq - 1;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq - 7;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq - 8;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    nextSquare = sq - 9;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-        else
-        {
-            moves.push_back({sq, nextSquare, MoveType::Standard});
-        }
-    }
-
-    // castling
+    int file = sq % 8;
+    int nextFile;
+    Color kingColor = board.pieceAt(sq).color;
+    Color opponentColor = oppositeColor(kingColor);
     CastlingAllowed castling = board.castlingAllowed();
-    if (castling.whiteQueenSide)
+
+    // Standard moves
+
+    for (int d : kingDirections)
     {
-        if (sq == 4 && board.pieceAt(sq).color == Color::White && board.pieceAt(0).type == PieceType::Rook && board.pieceAt(0).color == Color::White && board.pieceAt(1).type == PieceType::None && board.pieceAt(2).type == PieceType::None && board.pieceAt(3).type == PieceType::None)
+        nextSquare = sq + d;
+
+        if (!squareOnBoard(nextSquare))
         {
-            if (!board.isPieceAttacked(3))
-            {
-                moves.push_back({sq, 2, MoveType::QueenCastle});
-            }
+            continue;
+        }
+
+        file = sq % 8;
+        nextFile = nextSquare % 8;
+
+        if (nextFile - file > 1 || file - nextFile > 1)
+        {
+            continue;
+        }
+
+        if (board.isEmpty(nextSquare))
+        {
+            moves.push_back({sq, nextSquare, MoveType::Standard});
+        }
+        else
+        {
+            if (board.pieceAt(nextSquare).color == opponentColor)
+                moves.push_back({sq, nextSquare, MoveType::Capture});
+            continue;
         }
     }
-    if (castling.whiteKingSide)
+
+    // Castling
+    if (sq == 4 && kingColor == Color::White)
     {
-        if (sq == 4 && board.pieceAt(sq).color == Color::White && board.pieceAt(7).type == PieceType::Rook && board.pieceAt(7).color == Color::White && board.pieceAt(5).type == PieceType::None && board.pieceAt(6).type == PieceType::None)
+        if (castling.whiteQueenSide && board.pieceAt(0).type == PieceType::Rook && board.pieceAt(0).color == Color::White && board.pieceAt(1).type == PieceType::None && board.pieceAt(2).type == PieceType::None && board.pieceAt(3).type == PieceType::None && !board.isPieceAttacked(3))
         {
-            if (!board.isPieceAttacked(5))
-            {
-                moves.push_back({sq, 6, MoveType::KingCastle});
-            }
+            moves.push_back({sq, 2, MoveType::QueenCastle});
+        }
+        if (castling.whiteKingSide && board.pieceAt(7).type == PieceType::Rook && board.pieceAt(7).color == Color::White && board.pieceAt(5).type == PieceType::None && board.pieceAt(6).type == PieceType::None && !board.isPieceAttacked(5))
+        {
+            moves.push_back({sq, 6, MoveType::KingCastle});
         }
     }
-    if (castling.blackQueenSide)
+    if (sq == 60 && kingColor == Color::Black)
     {
-        if (sq == 60 && board.pieceAt(sq).color == Color::Black && board.pieceAt(56).type == PieceType::Rook && board.pieceAt(56).color == Color::Black && board.pieceAt(57).type == PieceType::None && board.pieceAt(58).type == PieceType::None && board.pieceAt(59).type == PieceType::None)
+        if (castling.blackQueenSide && board.pieceAt(56).type == PieceType::Rook && board.pieceAt(56).color == Color::Black && board.pieceAt(57).type == PieceType::None && board.pieceAt(58).type == PieceType::None && board.pieceAt(59).type == PieceType::None && !board.isPieceAttacked(59))
         {
-            if (!board.isPieceAttacked(59))
-            {
-                moves.push_back({sq, 58, MoveType::QueenCastle});
-            }
+            moves.push_back({sq, 58, MoveType::QueenCastle});
         }
-    }
-    if (castling.blackKingSide)
-    {
-        if (sq == 60 && board.pieceAt(sq).color == Color::Black && board.pieceAt(63).type == PieceType::Rook && board.pieceAt(63).color == Color::Black && board.pieceAt(61).type == PieceType::None && board.pieceAt(62).type == PieceType::None)
+        if (castling.blackKingSide && board.pieceAt(63).type == PieceType::Rook && board.pieceAt(63).color == Color::Black && board.pieceAt(61).type == PieceType::None && board.pieceAt(62).type == PieceType::None && !board.isPieceAttacked(61))
         {
-            if (!board.isPieceAttacked(61))
-            {
-                moves.push_back({sq, 62, MoveType::KingCastle});
-            }
+            moves.push_back({sq, 62, MoveType::KingCastle});
         }
     }
 }
@@ -861,7 +243,7 @@ MoveList generatePseudoLegalMoves(const Board &board)
 
     for (int sq = 0; sq < 64; sq++)
     {
-        Piece p = board.pieceAt(sq);
+        const Piece p = board.pieceAt(sq);
 
         if (p.color != board.sideToMove())
         {
@@ -876,16 +258,16 @@ MoveList generatePseudoLegalMoves(const Board &board)
             generatePawnMoves(board, sq, moves);
             break;
         case (PieceType::Rook):
-            generateRookMoves(board, sq, moves);
+            generateSliderMoves<4>(board, sq, moves, rookDirections);
             break;
         case (PieceType::Knight):
             generateKnightMoves(board, sq, moves);
             break;
         case (PieceType::Bishop):
-            generateBishopMoves(board, sq, moves);
+            generateSliderMoves<4>(board, sq, moves, bishopDirections);
             break;
         case (PieceType::Queen):
-            generateQueenMoves(board, sq, moves);
+            generateSliderMoves<8>(board, sq, moves, queenDirections);
             break;
         case (PieceType::King):
             generateKingMoves(board, sq, moves);

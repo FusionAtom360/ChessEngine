@@ -40,7 +40,7 @@ int perft(Board &board, int depth, bool display)
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
     if (display) {
-        std::cout << totalNodes << " nodes, " << elapsed_seconds << " seconds (" << (totalNodes / elapsed_seconds.count()) << " nodes/second)" << std::endl;
+        std::cout << totalNodes << " nodes, " << elapsed_seconds.count() << " seconds (" << (totalNodes / elapsed_seconds.count()) << " nodes/second)" << std::endl;
     }
 
     return totalNodes;
