@@ -21,8 +21,9 @@
                 "generate/generate.cpp",
                 "evaluate/evaluate.cpp",
                 "utils/utils.cpp",
+                "tests/tests.cpp",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${workspaceFolder}/src/main.exe"
             ],
             "options": {
                 "cwd": "${workspaceFolder}/src"

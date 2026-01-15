@@ -11,6 +11,9 @@ enum struct Color
     Black
 };
 
+std::string toString(Color color);
+
+
 enum struct PieceType
 {
     None,
@@ -130,4 +133,6 @@ public:
     std::string FEN();
 
     int halfMoveCounter();
+
+    std::string toString(Move move);
 };

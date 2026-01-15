@@ -11,6 +11,7 @@
 #include "generate/generate.h"
 #include "evaluate/evaluate.h"
 #include "utils/utils.h"
+#include "tests/tests.h"
 
 int fileCharToInt(char f) { return f - 'a'; }
 int rankCharToInt(char r) { return r - '1'; }
@@ -115,24 +116,40 @@ int main()
 {
 
     Board board = Board();
-    // board.setStateFEN("6R1/k1N5/Bq1P4/P1BQ3R/4PK2/5P2/8/4r3 w - - 19 68");
+    board.setStateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ");
+    //board.setStateFEN("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/2KR3R b kq - 1 1");
     std::cout << board.print();
-    std::cout << board.FEN() << std::endl;
+    perft(board, 5, true);
+
+    return 0;
+
+
+
+
+
 
     while (!gameOver(board))
     {
-        Move bestMove = findBestMove(board, 1);
+        Move bestMove = findBestMove(board, 5);
         board.makeMove(bestMove);
         std::cout << board.print();
 
-        // std::string userMove;
-        // std::cin >> userMove;
+        if (gameOver(board))
+        {
+            break;
+        }
 
-        // Move m = parseMove(userMove, board);
+        std::string userMove;
+        std::cin >> userMove;
+
+        Move m = parseMove(userMove, board);
+        board.makeMove(m);
+        std::cout << board.print();
     }
+
     if (board.kingInCheck())
     {
-        if (board.sideToMove() == Color::White)
+        if (board.sideToMove() == Color::Black)
         {
             std::cout << "White wins by checkmate";
         }

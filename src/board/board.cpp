@@ -4,6 +4,43 @@
 #include "board/board.h"
 #include <iostream>
 
+int Board::coordsToIndex(std::string coords)
+{
+    char file = coords[0];
+    int rank = coords[1] - '0' - 1;
+    int square = 0;
+
+    switch (file)
+    {
+    case 'a':
+        square = rank * 8;
+        break;
+    case 'b':
+        square = rank * 8 + 1;
+        break;
+    case 'c':
+        square = rank * 8 + 2;
+        break;
+    case 'd':
+        square = rank * 8 + 3;
+        break;
+    case 'e':
+        square = rank * 8 + 4;
+        break;
+    case 'f':
+        square = rank * 8 + 5;
+        break;
+    case 'g':
+        square = rank * 8 + 6;
+        break;
+    case 'h':
+        square = rank * 8 + 7;
+        break;
+    }
+
+    return square;
+}
+
 Color oppositeColor(const Color &color)
 {
     if (color == Color::White)
@@ -298,43 +335,6 @@ bool Board::isEmpty(int sq) const
     return squares[sq].type == PieceType::None;
 }
 
-int Board::coordsToIndex(std::string coords)
-{
-    char file = coords[0];
-    int rank = coords[1] - '0' - 1;
-    int square = 0;
-
-    switch (file)
-    {
-    case 'a':
-        square = rank * 8;
-        break;
-    case 'b':
-        square = rank * 8 + 1;
-        break;
-    case 'c':
-        square = rank * 8 + 2;
-        break;
-    case 'd':
-        square = rank * 8 + 3;
-        break;
-    case 'e':
-        square = rank * 8 + 4;
-        break;
-    case 'f':
-        square = rank * 8 + 5;
-        break;
-    case 'g':
-        square = rank * 8 + 6;
-        break;
-    case 'h':
-        square = rank * 8 + 7;
-        break;
-    }
-
-    return square;
-}
-
 int Board::enPassantSquare() const
 {
     return state.enPassantSquare;
@@ -342,7 +342,16 @@ int Board::enPassantSquare() const
 
 bool Board::isPieceAttacked(int sq) const
 {
-    Color opponentColor = oppositeColor(pieceAt(sq).color);
+    Color opponentColor;
+    if (pieceAt(sq).color != Color::None)
+    {
+        opponentColor = oppositeColor(pieceAt(sq).color);
+    }
+    else
+    {
+        opponentColor = oppositeColor(sideToMove());
+    }
+
     int startRank = sq / 8;
 
     int leftPawnAttack;
@@ -803,6 +812,9 @@ void Board::makeMove(Move move)
         state.halfMoveClock = 0;
     }
 
+    //clear en passant
+    state.enPassantSquare = -1;
+
     switch (move.type)
     {
     case (MoveType::Standard):
@@ -844,6 +856,8 @@ void Board::makeMove(Move move)
             squares[5] = Piece{PieceType::Rook, Color::White};
             squares[6] = Piece{PieceType::King, Color::White};
             squares[7] = Piece{PieceType::None, Color::None};
+            state.castling.whiteKingSide = false;
+            state.castling.whiteQueenSide = false;
         }
         else
         {
@@ -851,9 +865,9 @@ void Board::makeMove(Move move)
             squares[61] = Piece{PieceType::Rook, Color::Black};
             squares[62] = Piece{PieceType::King, Color::Black};
             squares[63] = Piece{PieceType::None, Color::None};
+            state.castling.blackKingSide = false;
+            state.castling.blackQueenSide = false;
         }
-        state.castling.whiteKingSide = false;
-        state.castling.whiteQueenSide = false;
         break;
     case (MoveType::QueenCastle):
         if (movingColor == Color::White)
@@ -862,6 +876,8 @@ void Board::makeMove(Move move)
             squares[2] = Piece{PieceType::King, Color::White};
             squares[3] = Piece{PieceType::Rook, Color::White};
             squares[4] = Piece{PieceType::None, Color::None};
+            state.castling.whiteKingSide = false;
+            state.castling.whiteQueenSide = false;
         }
         else
         {
@@ -869,16 +885,16 @@ void Board::makeMove(Move move)
             squares[58] = Piece{PieceType::King, Color::Black};
             squares[59] = Piece{PieceType::Rook, Color::Black};
             squares[60] = Piece{PieceType::None, Color::None};
+            state.castling.blackKingSide = false;
+            state.castling.blackQueenSide = false;
         }
-        state.castling.blackKingSide = false;
-        state.castling.blackQueenSide = false;
         break;
     case (MoveType::Promotion):
         squares[move.to] = Piece{move.promotion, movingColor};
         squares[move.from] = Piece{PieceType::None, Color::None};
         break;
     }
-    state.enPassantSquare = -1;
+    
     if (state.sideToMove == Color::White)
     {
         state.sideToMove = Color::Black;
@@ -963,28 +979,36 @@ std::string Board::FEN()
     {
         outputString += " w ";
     }
-    else {
+    else
+    {
         outputString += " b ";
     }
-    if (state.castling.whiteKingSide) {
+    if (state.castling.whiteKingSide)
+    {
         outputString += "K";
     }
-    if (state.castling.whiteQueenSide) {
+    if (state.castling.whiteQueenSide)
+    {
         outputString += "Q";
-    } 
-    if (state.castling.blackKingSide) {
+    }
+    if (state.castling.blackKingSide)
+    {
         outputString += "k";
-    } 
-    if (state.castling.blackQueenSide) {
+    }
+    if (state.castling.blackQueenSide)
+    {
         outputString += "q";
-    } 
-    if (!state.castling.whiteKingSide && !state.castling.whiteQueenSide && !state.castling.blackKingSide && !state.castling.blackQueenSide) {
+    }
+    if (!state.castling.whiteKingSide && !state.castling.whiteQueenSide && !state.castling.blackKingSide && !state.castling.blackQueenSide)
+    {
         outputString += "-";
     }
-    if (state.enPassantSquare != -1) {
+    if (state.enPassantSquare != -1)
+    {
         outputString += " " + indexToCoords(state.enPassantSquare) + " ";
     }
-    else {
+    else
+    {
         outputString += " - ";
     }
     outputString += std::to_string(state.halfMoveClock) + " ";
@@ -992,6 +1016,17 @@ std::string Board::FEN()
     return outputString;
 }
 
-int Board::halfMoveCounter() {
+int Board::halfMoveCounter()
+{
     return state.halfMoveClock;
+}
+
+std::string toString(Color color)
+{
+    return (color == Color::White) ? "white" : "black";
+}
+
+std::string Board::toString(Move move)
+{
+    return pieceToChar(pieceAt(move.from)) + indexToCoords(move.from) + indexToCoords(move.to);
 }
