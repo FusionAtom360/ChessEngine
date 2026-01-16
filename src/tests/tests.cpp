@@ -24,7 +24,7 @@ int perft(Board &board, int depth, bool display)
 {
     auto start = std::chrono::steady_clock::now();
     int totalNodes = 0;
-    MoveList legalMoves = generateLegalMoves(board);
+    MoveList legalMoves = generateOrderedMoves(board);
 
     for (Move m : legalMoves)
     {

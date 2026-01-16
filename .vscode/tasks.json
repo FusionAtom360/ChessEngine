@@ -15,18 +15,18 @@
                 //"-Wsign-conversion",
                 //"-Werror",
                 "-std=c++23",
-                "-I${workspaceFolder}/src",
-                "main.cpp",
-                "board/board.cpp",
-                "generate/generate.cpp",
-                "evaluate/evaluate.cpp",
-                "utils/utils.cpp",
-                "tests/tests.cpp",
+                "-I${workspaceFolder}\\src",
+                "${workspaceFolder}\\src\\main.cpp",
+                "${workspaceFolder}\\src\\board\\board.cpp",
+                "${workspaceFolder}\\src\\generate\\generate.cpp",
+                "${workspaceFolder}\\src\\evaluate\\evaluate.cpp",
+                "${workspaceFolder}\\src\\utils\\utils.cpp",
+                "${workspaceFolder}\\src\\tests\\tests.cpp",
                 "-o",
-                "${workspaceFolder}/src/main.exe"
+                "${workspaceFolder}\\src\\main.exe"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/src"
+                "cwd": "${workspaceFolder}\\src"
             },
             "problemMatcher": [
                 "$gcc"

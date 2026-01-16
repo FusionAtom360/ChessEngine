@@ -22,8 +22,6 @@ void generatePawnMoves(const Board &board, const int &sq, MoveList &moves)
 
     int oneAhead = (pawnColor == Color::White) ? sq + 8 : sq - 8;
     int twoAhead = (pawnColor == Color::White) ? sq + 16 : sq - 16;
-    // int leftCapture = (pawnColor == Color::White) ? sq + 7 : sq - 9;
-    // int rightCapture = (pawnColor == Color::White) ? sq + 9 : sq - 7;
     int nextSquare;
     int nextFile;
 
@@ -283,10 +281,12 @@ MoveList generateLegalMoves(Board &board)
     MoveList pseudoLegalMoves = generatePseudoLegalMoves(board);
     MoveList legalMoves;
 
+    Color movingColor = board.sideToMove();
+
     for (Move m : pseudoLegalMoves)
     {
         board.makeMove(m);
-        if (!board.kingInCheck(oppositeColor(board.sideToMove())))
+        if (!board.kingInCheck(movingColor))
         {
             legalMoves.push_back(m);
         }
@@ -296,278 +296,53 @@ MoveList generateLegalMoves(Board &board)
     return legalMoves;
 }
 
-void generatePawnCaptureMoves(const Board &board, int sq, MoveList &moves)
+void generatePawnCaptureMoves(const Board &board, const int &sq, MoveList &moves)
 {
     int rank = sq / 8;
     int file = sq % 8;
-    int leftCapture;
-    int rightCapture;
-    int promotionRank;
     Color pawnColor = board.pieceAt(sq).color;
     Color opponentColor = oppositeColor(pawnColor);
 
-    if (pawnColor == Color::White)
-    {
-        leftCapture = sq + 7;
-        rightCapture = sq + 9;
-        promotionRank = 6;
-    }
-    else
-    {
-        leftCapture = sq - 9;
-        rightCapture = sq - 7;
-        promotionRank = 1;
-    }
-
-    if ((pawnColor == Color::White && rank < 7) || (pawnColor == Color::Black && rank > 0))
-    {
-        if (file > 0)
-        {
-            // if black piece available to capture
-            if (!board.isEmpty(leftCapture) && board.pieceAt(leftCapture).color == opponentColor)
-            {
-                if (rank == promotionRank)
-                {
-                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Rook});
-                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Knight});
-                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Bishop});
-                    moves.push_back({sq, leftCapture, MoveType::Promotion, PieceType::Queen});
-                }
-                else
-                {
-                    moves.push_back({sq, leftCapture, MoveType::Capture});
-                }
-            }
-            else if (leftCapture == board.enPassantSquare())
-            {
-                moves.push_back({sq, leftCapture, MoveType::EnPassant});
-            }
-        }
-
-        if (file < 7)
-        {
-            // if black piece available to capture
-            if (!board.isEmpty(rightCapture) && board.pieceAt(rightCapture).color == opponentColor)
-            {
-                if (rank == promotionRank)
-                {
-                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Rook});
-                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Knight});
-                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Bishop});
-                    moves.push_back({sq, rightCapture, MoveType::Promotion, PieceType::Queen});
-                }
-                else
-                {
-                    moves.push_back({sq, rightCapture, MoveType::Capture});
-                }
-            }
-            else if (rightCapture == board.enPassantSquare())
-            {
-                moves.push_back({sq, rightCapture, MoveType::EnPassant});
-            }
-        }
-    }
-}
-
-void generateRookCaptureMoves(const Board &board, int sq, MoveList &moves)
-{
-    int rank = sq / 8;
     int nextSquare;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+    int nextFile;
 
-    // up
-    nextSquare = sq;
-    while (true)
+    int promotionRank = (pawnColor == Color::White) ? 6 : 1;
+
+    for (int d : pawnDirections)
     {
-        nextSquare += 8;
-        if (nextSquare <= 63 && nextSquare >= 0)
+        nextSquare = (pawnColor == Color::White) ? sq + d : sq - d;
+
+        if (!squareOnBoard(nextSquare))
         {
-            if (!board.isEmpty(nextSquare))
+            continue;
+        }
+
+        nextFile = nextSquare % 8;
+
+        if (nextFile - file > 1 || file - nextFile > 1)
+        {
+            continue;
+        }
+
+        if (board.isEmpty(nextSquare))
+        {
+            if (nextSquare == board.enPassantSquare())
             {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
+                moves.push_back({sq, nextSquare, MoveType::EnPassant});
             }
+            continue;
         }
-        else
-        {
-            break;
-        }
-    }
 
-    // down
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare -= 8;
-        if (nextSquare <= 63 && nextSquare >= 0)
+        if (board.pieceAt(nextSquare).color == opponentColor)
         {
-            if (!board.isEmpty(nextSquare))
+            if (rank == promotionRank)
             {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
+                moves.push_back({sq, nextSquare, MoveType::Promotion, PieceType::Rook});
+                moves.push_back({sq, nextSquare, MoveType::Promotion, PieceType::Knight});
+                moves.push_back({sq, nextSquare, MoveType::Promotion, PieceType::Bishop});
+                moves.push_back({sq, nextSquare, MoveType::Promotion, PieceType::Queen});
             }
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // left
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == rank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // right
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == rank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
-}
-
-void generateKnightCaptureMoves(const Board &board, int sq, MoveList &moves)
-{
-    int startRank = sq / 8;
-    int nextSquare;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
-
-    nextSquare = sq + 6;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq + 10;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq + 15;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 2)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq + 17;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 2)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq - 6;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq - 10;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq - 15;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 2)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq - 17;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 2)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
+            else
             {
                 moves.push_back({sq, nextSquare, MoveType::Capture});
             }
@@ -575,22 +350,33 @@ void generateKnightCaptureMoves(const Board &board, int sq, MoveList &moves)
     }
 }
 
-void generateBishopCaptureMoves(const Board &board, int sq, MoveList &moves)
+template <int numDirections>
+void generateSliderCaptureMoves(const Board &board, const int &sq, MoveList &moves, const std::array<int, numDirections> &directions)
 {
-    int startRank = sq / 8;
+    Color pieceColor = board.pieceAt(sq).color;
+    Color opponentColor = oppositeColor(pieceColor);
     int nextSquare;
-    int nextRank;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+    int prevSquare;
+    int prevFile;
+    int nextFile;
 
-    // up left
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
+    for (int d : directions)
     {
-        nextSquare += 7;
-        nextRank += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        nextSquare = sq;
+        while (true)
         {
+            prevSquare = nextSquare;
+            nextSquare += d;
+
+            if (!squareOnBoard(nextSquare))
+                break;
+
+            prevFile = prevSquare % 8;
+            nextFile = nextSquare % 8;
+
+            if (nextFile - prevFile > 1 || prevFile - nextFile > 1)
+                break;
+
             if (!board.isEmpty(nextSquare))
             {
                 if (board.pieceAt(nextSquare).color == opponentColor)
@@ -598,403 +384,73 @@ void generateBishopCaptureMoves(const Board &board, int sq, MoveList &moves)
                     moves.push_back({sq, nextSquare, MoveType::Capture});
                     break;
                 }
-                // break if white piece
                 break;
             }
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // up right
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare += 9;
-        nextRank += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down left
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare -= 9;
-        nextRank -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down right
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare -= 7;
-        nextRank -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
         }
     }
 }
 
-void generateQueenCaptureMoves(const Board &board, int sq, MoveList &moves)
+void generateKnightCaptureMoves(const Board &board, const int &sq, MoveList &moves)
 {
-    int startRank = sq / 8;
     int nextSquare;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+    int file = sq % 8;
+    int nextFile;
+    Color knightColor = board.pieceAt(sq).color;
+    Color opponentColor = oppositeColor(knightColor);
 
-    // up
-    nextSquare = sq;
-    while (true)
+    for (int d : knightDirections)
     {
-        nextSquare += 8;
-        if (nextSquare <= 63 && nextSquare >= 0)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
+        nextSquare = sq + d;
 
-    // down
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare -= 8;
-        if (nextSquare <= 63 && nextSquare >= 0)
+        if (!squareOnBoard(nextSquare))
         {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
+            continue;
         }
-        else
-        {
-            break;
-        }
-    }
 
-    // left
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
+        nextFile = nextSquare % 8;
 
-    // right
-    nextSquare = sq;
-    while (true)
-    {
-        nextSquare += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
+        if (nextFile - file > 2 || file - nextFile > 2)
         {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
+            continue;
         }
-        else
-        {
-            break;
-        }
-    }
 
-    int nextRank;
-
-    // up left
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare += 7;
-        nextRank += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
+        if (!board.isEmpty(nextSquare) && board.pieceAt(nextSquare).color == opponentColor)
         {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // up right
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare += 9;
-        nextRank += 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down left
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare -= 9;
-        nextRank -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // down right
-    nextSquare = sq;
-    nextRank = startRank;
-    while (true)
-    {
-        nextSquare -= 7;
-        nextRank -= 1;
-        if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == nextRank)
-        {
-            if (!board.isEmpty(nextSquare))
-            {
-                if (board.pieceAt(nextSquare).color == opponentColor)
-                {
-                    moves.push_back({sq, nextSquare, MoveType::Capture});
-                    break;
-                }
-                // break if white piece
-                break;
-            }
-        }
-        else
-        {
-            break;
+            moves.push_back({sq, nextSquare, MoveType::Capture});
         }
     }
 }
 
-void generateKingCaptureMoves(const Board &board, int sq, MoveList &moves)
+void generateKingCaptureMoves(const Board &board, const int &sq, MoveList &moves)
 {
-    int startRank = sq / 8;
     int nextSquare;
-    Color opponentColor = oppositeColor(board.pieceAt(sq).color);
+    int file = sq % 8;
+    int nextFile;
+    Color kingColor = board.pieceAt(sq).color;
+    Color opponentColor = oppositeColor(kingColor);
 
-    nextSquare = sq + 1;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
+    // Standard moves
+
+    for (int d : kingDirections)
     {
-        if (!board.isEmpty(nextSquare))
+        nextSquare = sq + d;
+
+        if (!squareOnBoard(nextSquare))
         {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
+            continue;
         }
-    }
 
-    nextSquare = sq + 7;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
+        file = sq % 8;
+        nextFile = nextSquare % 8;
+
+        if (nextFile - file > 1 || file - nextFile > 1)
         {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
+            continue;
         }
-    }
 
-    nextSquare = sq + 8;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
+        if (!board.isEmpty(nextSquare) && board.pieceAt(nextSquare).color == opponentColor)
         {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq + 9;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank + 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq - 1;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq - 7;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq - 8;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
-        }
-    }
-
-    nextSquare = sq - 9;
-    if (nextSquare <= 63 && nextSquare >= 0 && nextSquare / 8 == startRank - 1)
-    {
-        if (!board.isEmpty(nextSquare))
-        {
-            if (board.pieceAt(nextSquare).color == opponentColor)
-            {
-                moves.push_back({sq, nextSquare, MoveType::Capture});
-            }
+            moves.push_back({sq, nextSquare, MoveType::Capture});
         }
     }
 }
@@ -1020,16 +476,16 @@ MoveList generatePseudoLegalCaptureMoves(const Board &board)
             generatePawnCaptureMoves(board, sq, moves);
             break;
         case (PieceType::Rook):
-            generateRookCaptureMoves(board, sq, moves);
+            generateSliderCaptureMoves<4>(board, sq, moves, rookDirections);
             break;
         case (PieceType::Knight):
             generateKnightCaptureMoves(board, sq, moves);
             break;
         case (PieceType::Bishop):
-            generateBishopCaptureMoves(board, sq, moves);
+            generateSliderCaptureMoves<4>(board, sq, moves, bishopDirections);
             break;
         case (PieceType::Queen):
-            generateQueenCaptureMoves(board, sq, moves);
+            generateSliderCaptureMoves<8>(board, sq, moves, queenDirections);
             break;
         case (PieceType::King):
             generateKingCaptureMoves(board, sq, moves);
@@ -1045,10 +501,12 @@ MoveList generateCaptureMoves(Board &board)
     MoveList pseudoLegalCaptureMoves = generatePseudoLegalCaptureMoves(board);
     MoveList legalCaptureMoves;
 
+    Color movingColor = board.sideToMove();
+
     for (Move m : pseudoLegalCaptureMoves)
     {
         board.makeMove(m);
-        if (!board.kingInCheck(oppositeColor(board.sideToMove())))
+        if (!board.kingInCheck(movingColor))
         {
             legalCaptureMoves.push_back(m);
         }
@@ -1080,13 +538,12 @@ int pieceValue(PieceType type)
     return 0;
 }
 
-int scoreMove(const Move &m, const Board &board)
+int scoreMoveStatic(const Move &m, Board &board)
 {
     int score = 0;
 
     if (board.pieceAt(m.to).type != PieceType::None)
     {
-        // MVV-LVA: victim value - attacker value
         int victimValue = pieceValue(board.pieceAt(m.to).type);
         int attackerValue = pieceValue(board.pieceAt(m.from).type);
         score += (victimValue * 10 - attackerValue);
@@ -1094,14 +551,7 @@ int scoreMove(const Move &m, const Board &board)
 
     if (m.promotion != PieceType::None)
     {
-        score += 900; // prefer queen promotions
-    }
-
-    Board test = board;
-    test.makeMove(m);
-    if (test.kingInCheck(oppositeColor(board.sideToMove())))
-    {
-        score += 50;
+        score += 900;
     }
 
     return score;
@@ -1109,42 +559,68 @@ int scoreMove(const Move &m, const Board &board)
 
 MoveList generateOrderedMoves(Board &board)
 {
-    MoveList moves = generateLegalMoves(board);
+    MoveList pseudoLegalMoves = generatePseudoLegalMoves(board);
+    ScoredMoveList scoredLegalMoves;
+    int moveScore;
 
-    ScoredMoveList scoredMoves;
-    for (Move m : moves)
+    Color movingColor = board.sideToMove();
+
+    for (Move m : pseudoLegalMoves)
     {
-        scoredMoves.push_back({m, scoreMove(m, board)});
+        board.makeMove(m);
+        if (!board.kingInCheck(movingColor))
+        {
+            moveScore = scoreMoveStatic(m, board);
+            if (board.kingInCheck(oppositeColor(board.sideToMove())))
+            {
+                moveScore += 50;
+            }
+            scoredLegalMoves.push_back({m, moveScore});
+        }
+        board.unMakeMove();
     }
 
-    std::sort(scoredMoves.begin(), scoredMoves.end(),
+    std::sort(scoredLegalMoves.begin(), scoredLegalMoves.end(),
               [](const ScoredMove &a, const ScoredMove &b)
               { return a.score > b.score; }); // descending
 
-    MoveList ordered;
-    for (ScoredMove m : scoredMoves)
-        ordered.push_back(m.move);
+    MoveList orderedMoves;
+    for (ScoredMove m : scoredLegalMoves)
+        orderedMoves.push_back(m.move);
 
-    return ordered;
+    return orderedMoves;
 }
 
 MoveList generateOrderedCaptureMoves(Board &board)
 {
-    MoveList moves = generateCaptureMoves(board);
+    MoveList pseudoLegalMoves = generatePseudoLegalCaptureMoves(board);
+    ScoredMoveList scoredLegalMoves;
+    int moveScore;
 
-    ScoredMoveList scoredMoves;
-    for (Move m : moves)
+    Color movingColor = board.sideToMove();
+
+    for (Move m : pseudoLegalMoves)
     {
-        scoredMoves.push_back({m, scoreMove(m, board)});
+        board.makeMove(m);
+        if (!board.kingInCheck(movingColor))
+        {
+            moveScore = scoreMoveStatic(m, board);
+            if (board.kingInCheck(oppositeColor(board.sideToMove())))
+            {
+                moveScore += 50;
+            }
+            scoredLegalMoves.push_back({m, moveScore});
+        }
+        board.unMakeMove();
     }
 
-    std::sort(scoredMoves.begin(), scoredMoves.end(),
+    std::sort(scoredLegalMoves.begin(), scoredLegalMoves.end(),
               [](const ScoredMove &a, const ScoredMove &b)
               { return a.score > b.score; }); // descending
 
-    MoveList ordered;
-    for (ScoredMove m : scoredMoves)
-        ordered.push_back(m.move);
+    MoveList orderedMoves;
+    for (ScoredMove m : scoredLegalMoves)
+        orderedMoves.push_back(m.move);
 
-    return ordered;
+    return orderedMoves;
 }

@@ -759,6 +759,7 @@ int Board::kingLocation(Color color) const
             return sq;
         }
     }
+    printHistoryDebug();
     throw std::runtime_error("King not found on board");
 }
 

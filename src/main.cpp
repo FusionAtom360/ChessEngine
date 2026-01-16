@@ -116,17 +116,8 @@ int main()
 {
 
     Board board = Board();
-    board.setStateFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ");
     //board.setStateFEN("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/2KR3R b kq - 1 1");
     std::cout << board.print();
-    perft(board, 5, true);
-
-    return 0;
-
-
-
-
-
 
     while (!gameOver(board))
     {

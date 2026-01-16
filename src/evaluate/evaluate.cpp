@@ -6,6 +6,8 @@ int searchMoveCount = 0;
 int maxDepth;
 int startDepth;
 
+const int deltaMargin = 900;
+
 int mirror(int sq)
 {
     return sq ^ 56; // flips rank
@@ -60,7 +62,7 @@ int evaluate(const Board &board)
         score += (p.color == Color::White) ? total : -total;
     }
 
-    return score;
+    return (board.sideToMove() == Color::White) ? score : -score;
 }
 
 int quiescence(Board &board, int alpha, int beta, int ply)
@@ -75,20 +77,29 @@ int quiescence(Board &board, int alpha, int beta, int ply)
         int staticEval = evaluate(board);
 
         if (staticEval >= beta)
+        {
             return beta;
+        }
+
+        if (staticEval < alpha - deltaMargin)
+        {
+            return alpha;
+        }
 
         if (staticEval > alpha)
+        {
             alpha = staticEval;
+        }
     }
 
     MoveList moves;
     if (board.kingInCheck())
     {
-        moves = generateOrderedMoves(board); // all evasions
+        moves = generateOrderedMoves(board);
     }
     else
     {
-        MoveList moves = generateOrderedCaptureMoves(board);
+        moves = generateOrderedCaptureMoves(board);
     }
 
     if (moves.empty())
@@ -100,6 +111,7 @@ int quiescence(Board &board, int alpha, int beta, int ply)
 
     for (const Move &m : moves)
     {
+        searchMoveCount++;
         board.makeMove(m);
         int score = -quiescence(board, -beta, -alpha, ply + 1);
         board.unMakeMove();
@@ -163,7 +175,7 @@ Move findBestMove(Board &board, int depth)
 
     MoveList moves = generateLegalMoves(board);
     if (moves.empty())
-        return Move(); // or Move::none()
+        return Move();
 
     Move bestMove = moves[0];
     int bestScore = NEG_INF;
@@ -198,10 +210,12 @@ Move findBestMove(Board &board, int depth)
 bool gameOver(Board &board)
 {
     MoveList legalMoves = generateLegalMoves(board);
-    if (legalMoves.empty()) {
+    if (legalMoves.empty())
+    {
         return true;
     }
-    if (board.halfMoveCounter() >= 50) {
+    if (board.halfMoveCounter() >= 50)
+    {
         return true;
     }
     return false;
