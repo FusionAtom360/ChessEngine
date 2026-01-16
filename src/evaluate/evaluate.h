@@ -2,8 +2,12 @@
 
 #include "board/board.h"
 #include "generate/generate.h"
+#include <chrono>
 
 const int MATE = 32000;
+
+const int deltaMargin = 900;
+const int maxPly = 8;
 
 const int pawnPST[64] = {
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -73,6 +77,14 @@ int quiescence(Board &board, int alpha, int beta, int ply);
 
 int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta, int ply);
 
+int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta, int ply);
+
+int negamaxAlphaBeta(Board &board, int depth, int alpha, int beta, int ply, std::chrono::steady_clock::time_point &startTime, double &timeLimit);
+
 Move findBestMove(Board &board, int depth);
 
+Move findBestMove(Board &board, int depth, double timeLimit);
+
 bool gameOver(Board &board);
+
+bool timeIsUp(std::chrono::steady_clock::time_point &startTime, double &timeLimit);

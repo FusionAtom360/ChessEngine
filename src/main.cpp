@@ -116,12 +116,13 @@ int main()
 {
 
     Board board = Board();
-    //board.setStateFEN("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/2KR3R b kq - 1 1");
+    //board.setFEN("8/3b4/8/4k3/8/5P2/1PP4P/2B4K w - - 0 63");
     std::cout << board.print();
+    //perft(board, 5, true);
 
     while (!gameOver(board))
     {
-        Move bestMove = findBestMove(board, 5);
+        Move bestMove = findBestMove(board, 10, 5.0);
         board.makeMove(bestMove);
         std::cout << board.print();
 

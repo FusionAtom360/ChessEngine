@@ -179,7 +179,7 @@ std::string Board::print() const
     return outputString;
 }
 
-void Board::setStateFEN(std::string fen)
+void Board::setFEN(std::string fen)
 {
     for (int s = 0; s < 64; s++)
     {
@@ -943,7 +943,7 @@ std::string Board::indexToCoords(int sq)
     }
 }
 
-std::string Board::FEN()
+std::string Board::getFEN()
 {
     std::string outputString;
     int emptyCount;

@@ -100,7 +100,7 @@ public:
 
     std::string print() const;
 
-    void setStateFEN(std::string fen);
+    void setFEN(std::string fen);
 
     Piece pieceAt(int sq) const;
 
@@ -130,7 +130,7 @@ public:
 
     std::string indexToCoords(int sq);
 
-    std::string FEN();
+    std::string getFEN();
 
     int halfMoveCounter();
 
