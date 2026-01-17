@@ -1,6 +1,6 @@
 # Chess Engine (C++)
 
-A simple yet functional chess engine implemented in C++, featuring move generation, board evaluation, and search algorithms with alpha–beta pruning. Designed as a modular engine suitable for experimentation with AI, evaluation functions, and engine optimizations.
+A simple yet functional chess engine implemented in C++, featuring move generation, board evaluation, and search algorithms with alpha–beta pruning. 
 
 ## Features
 
