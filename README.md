@@ -26,6 +26,8 @@ A simple yet functional chess engine implemented in C++, featuring move generati
 
 - Time-limited search support
 
+- Iterative deepening for progressive deep search
+
 - Quiescence search to reduce horizon effect
 
 - Evaluation
@@ -166,8 +168,6 @@ g++ -std=c++17 -O2 -I include/ src/*.cpp -o chess_engine
 - Endgame evaluation: separate king PST and tablebases
 
 - Move ordering heuristics: history heuristic, killer moves, MVV-LVA
-
-- Iterative deepening for progressive deep search
 
 - Transposition tables to cache positions and improve speed
 
