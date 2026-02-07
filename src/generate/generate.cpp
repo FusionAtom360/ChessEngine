@@ -92,7 +92,7 @@ void generatePawnMoves(const Board &board, const int &sq, MoveList &moves)
     }
 }
 
-template <int numDirections>
+template <size_t numDirections>
 void generateSliderMoves(const Board &board, const int &sq, MoveList &moves, const std::array<int, numDirections> &directions)
 {
     Color pieceColor = board.pieceAt(sq).color;
@@ -350,7 +350,7 @@ void generatePawnCaptureMoves(const Board &board, const int &sq, MoveList &moves
     }
 }
 
-template <int numDirections>
+template <size_t numDirections>
 void generateSliderCaptureMoves(const Board &board, const int &sq, MoveList &moves, const std::array<int, numDirections> &directions)
 {
     Color pieceColor = board.pieceAt(sq).color;

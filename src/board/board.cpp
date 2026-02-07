@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <cassert>
+#include <cstdint>
 #include "board/board.h"
 #include <iostream>
 
@@ -95,7 +96,7 @@ Board::Board() : state(), squares(), history()
     state.halfMoveClock = 0;
     state.fullMoveNumber = 1;
 
-    for (int s = 0; s < 64; s++)
+    for (size_t s = 0; s < 64; s++)
     {
         squares[s] = Piece{PieceType::None, Color::None};
     }
@@ -109,7 +110,7 @@ Board::Board() : state(), squares(), history()
     squares[6] = Piece{PieceType::Knight, Color::White};
     squares[7] = Piece{PieceType::Rook, Color::White};
 
-    for (int file = 0; file < 8; file++)
+    for (size_t file = 0; file < 8; file++)
     {
         squares[8 + file] = Piece{PieceType::Pawn, Color::White};
     }
@@ -123,7 +124,7 @@ Board::Board() : state(), squares(), history()
     squares[62] = Piece{PieceType::Knight, Color::Black};
     squares[63] = Piece{PieceType::Rook, Color::Black};
 
-    for (int file = 0; file < 8; file++)
+    for (size_t file = 0; file < 8; file++)
     {
         squares[48 + file] = Piece{PieceType::Pawn, Color::Black};
     }
@@ -136,7 +137,7 @@ std::string Board::print() const
     {
         for (int file = 0; file < 8; file++)
         {
-            int sq = rank * 8 + file;
+            size_t sq = static_cast<size_t>(rank) * 8 + static_cast<size_t>(file);
             outputString += std::string(1, pieceToChar(squares[sq])) + " ";
         }
         outputString += (std::to_string(rank + 1) + "\n");
@@ -181,7 +182,7 @@ std::string Board::print() const
 
 void Board::setFEN(std::string fen)
 {
-    for (int s = 0; s < 64; s++)
+    for (size_t s = 0; s < 64; s++)
     {
         squares[s] = Piece{PieceType::None, Color::None};
     }
@@ -193,7 +194,7 @@ void Board::setFEN(std::string fen)
     iss >> piecePlacement >> activeColor >> castlingAllowed >> enPassantTarget >> halfMoveClock >> fullMoveNumber;
 
     // start from top left
-    int current_square = 56;
+    size_t current_square = 56;
     for (char c : piecePlacement)
     {
         switch (c)
@@ -321,7 +322,7 @@ void Board::setFEN(std::string fen)
 Piece Board::pieceAt(int sq) const
 {
     assert(sq >= 0 && sq < 64);
-    return squares[sq];
+    return squares[static_cast<size_t>(sq)];
 }
 
 Color Board::sideToMove() const
@@ -332,7 +333,7 @@ Color Board::sideToMove() const
 bool Board::isEmpty(int sq) const
 {
     assert(sq >= 0 && sq < 64);
-    return squares[sq].type == PieceType::None;
+    return squares[static_cast<size_t>(sq)].type == PieceType::None;
 }
 
 int Board::enPassantSquare() const
@@ -802,9 +803,9 @@ void Board::makeMove(Move move)
 {
     history.stateHistory.push_back(state);
     history.arrayHistory.push_back(squares);
-    Color movingColor = squares[move.from].color;
+    Color movingColor = squares[static_cast<size_t>(move.from)].color;
 
-    if (!(squares[move.from].type == PieceType::Pawn))
+    if (!(squares[static_cast<size_t>(move.from)].type == PieceType::Pawn))
     {
         state.halfMoveClock += 1;
     }
@@ -819,16 +820,16 @@ void Board::makeMove(Move move)
     switch (move.type)
     {
     case (MoveType::Standard):
-        squares[move.to] = squares[move.from];
-        squares[move.from] = Piece{PieceType::None, Color::None};
+        squares[static_cast<size_t>(move.to)] = squares[static_cast<size_t>(move.from)];
+        squares[static_cast<size_t>(move.from)] = Piece{PieceType::None, Color::None};
         break;
     case (MoveType::Capture):
-        squares[move.to] = squares[move.from];
-        squares[move.from] = Piece{PieceType::None, Color::None};
+        squares[static_cast<size_t>(move.to)] = squares[static_cast<size_t>(move.from)];
+        squares[static_cast<size_t>(move.from)] = Piece{PieceType::None, Color::None};
         break;
     case (MoveType::DoublePawnPush):
-        squares[move.to] = squares[move.from];
-        squares[move.from] = Piece{PieceType::None, Color::None};
+        squares[static_cast<size_t>(move.to)] = squares[static_cast<size_t>(move.from)];
+        squares[static_cast<size_t>(move.from)] = Piece{PieceType::None, Color::None};
         if (movingColor == Color::White)
         {
             state.enPassantSquare = move.to - 8;
@@ -839,15 +840,15 @@ void Board::makeMove(Move move)
         }
         break;
     case (MoveType::EnPassant):
-        squares[move.to] = squares[move.from];
-        squares[move.from] = Piece{PieceType::None, Color::None};
+        squares[static_cast<size_t>(move.to)] = squares[static_cast<size_t>(move.from)];
+        squares[static_cast<size_t>(move.from)] = Piece{PieceType::None, Color::None};
         if (movingColor == Color::White)
         {
-            squares[move.to - 8] = Piece{PieceType::None, Color::None};
+            squares[static_cast<size_t>(move.to - 8)] = Piece{PieceType::None, Color::None};
         }
         else
         {
-            squares[move.to + 8] = Piece{PieceType::None, Color::None};
+            squares[static_cast<size_t>(move.to + 8)] = Piece{PieceType::None, Color::None};
         }
         break;
     case (MoveType::KingCastle):
@@ -891,8 +892,8 @@ void Board::makeMove(Move move)
         }
         break;
     case (MoveType::Promotion):
-        squares[move.to] = Piece{move.promotion, movingColor};
-        squares[move.from] = Piece{PieceType::None, Color::None};
+        squares[static_cast<size_t>(move.to)] = Piece{move.promotion, movingColor};
+        squares[static_cast<size_t>(move.from)] = Piece{PieceType::None, Color::None};
         break;
     }
     

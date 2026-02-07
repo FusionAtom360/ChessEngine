@@ -4,7 +4,7 @@
 
 void generatePawnMoves(const Board &board, const int &sq, MoveList &moves);
 
-template <int numDirections>
+template <size_t numDirections>
 void generateSliderMoves(const Board &board, const int &sq, MoveList &moves, const std::array<int, numDirections> &directions);
 
 void generateKnightMoves(const Board &board, const int &sq, MoveList &moves);
@@ -17,7 +17,7 @@ MoveList generateLegalMoves(Board &board);
 
 void generatePawnCaptureMoves(const Board &board, const int &sq, MoveList &moves);
 
-template <int numDirections>
+template <size_t numDirections>
 void generateSliderCaptureMoves(const Board &board, const int &sq, MoveList &moves, const std::array<int, numDirections> &directions);
 
 void generateKnightCaptureMoves(const Board &board, const int &sq, MoveList &moves);

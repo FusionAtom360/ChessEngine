@@ -269,7 +269,7 @@ Move findBestMove(Board &board, int maxDepth, double timeLimit)
     }
 
     Move bestMove;
-    int bestIndex;
+    size_t bestIndex;
     int bestScore = NEG_INF;
     int highestDepth;
 
@@ -282,7 +282,7 @@ Move findBestMove(Board &board, int maxDepth, double timeLimit)
         int currentBestScore = NEG_INF;
         Move currentBestMove = moves[0];
 
-        for (int i = 0; i < moves.size(); i++)
+        for (size_t i = 0; i < moves.size(); i++)
         {
             board.makeMove(moves[i]);
             int score = -negamaxAlphaBeta(board, depth - 1, -beta, -alpha, 0, start, timeLimit);
