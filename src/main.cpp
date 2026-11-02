@@ -18,12 +18,15 @@ int rankCharToInt(char r) { return r - '1'; }
 
 int squareFromString(const std::string &s)
 {
+    if (s.length() != 2 || s[0] < 'a' || s[0] > 'h' || s[1] < '1' || s[1] > '8')
+        throw std::invalid_argument("Invalid square: " + s);
+
     int file = fileCharToInt(s[0]);
     int rank = rankCharToInt(s[1]);
     return rank * 8 + file;
 }
 
-Move parseMove(const std::string &moveStr, const Board &board)
+Move parseMove(const std::string &moveStr, Board &board)
 {
     if (moveStr.length() < 4)
         throw std::invalid_argument("Move string too short");
@@ -68,7 +71,7 @@ Move parseMove(const std::string &moveStr, const Board &board)
             m.type = MoveType::QueenCastle;
     }
 
-    if (targetPiece.type != PieceType::None && targetPiece.color != movingPiece.color)
+    if (targetPiece.type != PieceType::None && targetPiece.color != movingPiece.color && m.type != MoveType::Promotion)
     {
         m.type = MoveType::Capture;
     }
@@ -91,7 +94,17 @@ Move parseMove(const std::string &moveStr, const Board &board)
         }
     }
 
-    return m;
+    MoveList legalMoves = generateLegalMoves(board);
+    for (const Move &legalMove : legalMoves)
+    {
+        if (legalMove.from == m.from && legalMove.to == m.to &&
+            legalMove.type == m.type && legalMove.promotion == m.promotion)
+        {
+            return m;
+        }
+    }
+
+    throw std::invalid_argument("Illegal move: " + moveStr);
 }
 
 // 56 57 58 59 60 61 62 63
@@ -112,9 +125,19 @@ Move parseMove(const std::string &moveStr, const Board &board)
 // a2 b2 c2 d2 e2 f2 g2 h2
 // a1 b1 c1 d1 e1 f1 g1 h1
 
-int main()
-{
+int main(int argc, char **argv)
 
+{
+    if (argc > 1)
+    {
+        std::string arg = argv[1];
+        if (arg == "--run-tests")
+        {
+            extern void runAllTests();
+            runAllTests();
+            return 0;
+        }
+    }
     Board board = Board();
     //board.setFEN("8/3b4/8/4k3/8/5P2/1PP4P/2B4K w - - 0 63");
     std::cout << board.print();
@@ -134,9 +157,16 @@ int main()
         std::string userMove;
         std::cin >> userMove;
 
-        Move m = parseMove(userMove, board);
-        board.makeMove(m);
-        std::cout << board.print();
+        try
+        {
+            Move m = parseMove(userMove, board);
+            board.makeMove(m);
+            std::cout << board.print();
+        }
+        catch (const std::invalid_argument &error)
+        {
+            std::cout << error.what() << std::endl;
+        }
     }
 
     if (board.kingInCheck())

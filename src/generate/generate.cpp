@@ -213,22 +213,22 @@ void generateKingMoves(const Board &board, const int &sq, MoveList &moves)
     // Castling
     if (sq == 4 && kingColor == Color::White)
     {
-        if (castling.whiteQueenSide && board.pieceAt(0).type == PieceType::Rook && board.pieceAt(0).color == Color::White && board.pieceAt(1).type == PieceType::None && board.pieceAt(2).type == PieceType::None && board.pieceAt(3).type == PieceType::None && !board.isPieceAttacked(3))
+        if (!board.isPieceAttacked(sq) && castling.whiteQueenSide && board.pieceAt(0).type == PieceType::Rook && board.pieceAt(0).color == Color::White && board.pieceAt(1).type == PieceType::None && board.pieceAt(2).type == PieceType::None && board.pieceAt(3).type == PieceType::None && !board.isPieceAttacked(3))
         {
             moves.push_back({sq, 2, MoveType::QueenCastle});
         }
-        if (castling.whiteKingSide && board.pieceAt(7).type == PieceType::Rook && board.pieceAt(7).color == Color::White && board.pieceAt(5).type == PieceType::None && board.pieceAt(6).type == PieceType::None && !board.isPieceAttacked(5))
+        if (!board.isPieceAttacked(sq) && castling.whiteKingSide && board.pieceAt(7).type == PieceType::Rook && board.pieceAt(7).color == Color::White && board.pieceAt(5).type == PieceType::None && board.pieceAt(6).type == PieceType::None && !board.isPieceAttacked(5))
         {
             moves.push_back({sq, 6, MoveType::KingCastle});
         }
     }
     if (sq == 60 && kingColor == Color::Black)
     {
-        if (castling.blackQueenSide && board.pieceAt(56).type == PieceType::Rook && board.pieceAt(56).color == Color::Black && board.pieceAt(57).type == PieceType::None && board.pieceAt(58).type == PieceType::None && board.pieceAt(59).type == PieceType::None && !board.isPieceAttacked(59))
+        if (!board.isPieceAttacked(sq) && castling.blackQueenSide && board.pieceAt(56).type == PieceType::Rook && board.pieceAt(56).color == Color::Black && board.pieceAt(57).type == PieceType::None && board.pieceAt(58).type == PieceType::None && board.pieceAt(59).type == PieceType::None && !board.isPieceAttacked(59))
         {
             moves.push_back({sq, 58, MoveType::QueenCastle});
         }
-        if (castling.blackKingSide && board.pieceAt(63).type == PieceType::Rook && board.pieceAt(63).color == Color::Black && board.pieceAt(61).type == PieceType::None && board.pieceAt(62).type == PieceType::None && !board.isPieceAttacked(61))
+        if (!board.isPieceAttacked(sq) && castling.blackKingSide && board.pieceAt(63).type == PieceType::Rook && board.pieceAt(63).color == Color::Black && board.pieceAt(61).type == PieceType::None && board.pieceAt(62).type == PieceType::None && !board.isPieceAttacked(61))
         {
             moves.push_back({sq, 62, MoveType::KingCastle});
         }
@@ -567,11 +567,11 @@ MoveList generateOrderedMoves(Board &board)
 
     for (Move m : pseudoLegalMoves)
     {
+        moveScore = scoreMoveStatic(m, board);
         board.makeMove(m);
         if (!board.kingInCheck(movingColor))
         {
-            moveScore = scoreMoveStatic(m, board);
-            if (board.kingInCheck(oppositeColor(board.sideToMove())))
+            if (board.kingInCheck(board.sideToMove()))
             {
                 moveScore += 50;
             }
@@ -601,11 +601,11 @@ MoveList generateOrderedCaptureMoves(Board &board)
 
     for (Move m : pseudoLegalMoves)
     {
+        moveScore = scoreMoveStatic(m, board);
         board.makeMove(m);
         if (!board.kingInCheck(movingColor))
         {
-            moveScore = scoreMoveStatic(m, board);
-            if (board.kingInCheck(oppositeColor(board.sideToMove())))
+            if (board.kingInCheck(board.sideToMove()))
             {
                 moveScore += 50;
             }

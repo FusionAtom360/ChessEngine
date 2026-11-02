@@ -268,10 +268,10 @@ Move findBestMove(Board &board, int maxDepth, double timeLimit)
         return moves[0];
     }
 
-    Move bestMove;
-    size_t bestIndex;
+    Move bestMove = moves[0];
+    size_t bestIndex = 0;
     int bestScore = NEG_INF;
-    int highestDepth;
+    int highestDepth = 0;
 
     // Iterative deepening
     for (int depth = 1; depth <= maxDepth; depth++)
@@ -288,7 +288,7 @@ Move findBestMove(Board &board, int maxDepth, double timeLimit)
             int score = -negamaxAlphaBeta(board, depth - 1, -beta, -alpha, 0, start, timeLimit);
             board.unMakeMove();
 
-            if (score > bestScore)
+            if (score > currentBestScore)
             {
                 currentBestScore = score;
                 currentBestMove = moves[i];
@@ -335,7 +335,7 @@ bool gameOver(Board &board)
     {
         return true;
     }
-    if (board.halfMoveCounter() >= 50)
+    if (board.halfMoveCounter() >= 100)
     {
         return true;
     }

@@ -108,7 +108,7 @@ public:
 
     bool isEmpty(int sq) const;
 
-    int coordsToIndex(std::string coords);
+    int coordsToIndex(const std::string &coords);
 
     int enPassantSquare() const;
 

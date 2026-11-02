@@ -2,42 +2,35 @@
 #include <sstream>
 #include <cassert>
 #include <cstdint>
+#include <stdexcept>
 #include "board/board.h"
 #include <iostream>
 
-int Board::coordsToIndex(std::string coords)
+int validateCoords(const std::string &coords)
 {
-    char file = coords[0];
-    int rank = coords[1] - '0' - 1;
-    int square = 0;
-
-    switch (file)
+    if (coords.length() != 2)
     {
-    case 'a':
-        square = rank * 8;
-        break;
-    case 'b':
-        square = rank * 8 + 1;
-        break;
-    case 'c':
-        square = rank * 8 + 2;
-        break;
-    case 'd':
-        square = rank * 8 + 3;
-        break;
-    case 'e':
-        square = rank * 8 + 4;
-        break;
-    case 'f':
-        square = rank * 8 + 5;
-        break;
-    case 'g':
-        square = rank * 8 + 6;
-        break;
-    case 'h':
-        square = rank * 8 + 7;
-        break;
+        throw std::invalid_argument("Invalid coordinates: " + coords);
     }
+    char file = coords[0];
+    char rank = coords[1];
+    if (file < 'a' || file > 'h')
+    {
+        throw std::invalid_argument("Invalid file in coordinates: " + coords);
+    }
+    if (rank < '1' || rank > '8')
+    {
+        throw std::invalid_argument("Invalid rank in coordinates: " + coords);
+    }
+    return 0;
+}
+
+int Board::coordsToIndex(const std::string &coords)
+{
+    validateCoords(coords);
+    int rank = coords[1] - '0' - 1;
+    int fileOffset = coords[0] - 'a';
+    int square = rank * 8 + fileOffset;
 
     return square;
 }
@@ -182,16 +175,58 @@ std::string Board::print() const
 
 void Board::setFEN(std::string fen)
 {
+    std::istringstream iss(fen);
+    std::string piecePlacement, activeColor, castlingAllowed, enPassantTarget, halfMoveClock, fullMoveNumber;
+
+    if (!(iss >> piecePlacement >> activeColor >> castlingAllowed >> enPassantTarget >> halfMoveClock >> fullMoveNumber))
+    {
+        throw std::invalid_argument("Invalid FEN: expected six fields");
+    }
+
+    int rank = 7;
+    int file = 0;
+    for (char c : piecePlacement)
+    {
+        if (c == '/')
+        {
+            if (file != 8 || rank == 0)
+            {
+                throw std::invalid_argument("Invalid FEN piece placement: " + piecePlacement);
+            }
+            --rank;
+            file = 0;
+            continue;
+        }
+
+        if (c >= '1' && c <= '8')
+        {
+            file += c - '0';
+        }
+        else if (c == 'p' || c == 'n' || c == 'b' || c == 'r' || c == 'q' || c == 'k' ||
+                 c == 'P' || c == 'N' || c == 'B' || c == 'R' || c == 'Q' || c == 'K')
+        {
+            ++file;
+        }
+        else
+        {
+            throw std::invalid_argument("Invalid FEN piece placement: " + piecePlacement);
+        }
+
+        if (file > 8)
+        {
+            throw std::invalid_argument("Invalid FEN piece placement: " + piecePlacement);
+        }
+    }
+
+    if (rank != 0 || file != 8)
+    {
+        throw std::invalid_argument("Invalid FEN piece placement: " + piecePlacement);
+    }
+
     for (size_t s = 0; s < 64; s++)
     {
         squares[s] = Piece{PieceType::None, Color::None};
     }
-
-    // split string into component parts
-    std::istringstream iss(fen);
-    std::string piecePlacement, activeColor, castlingAllowed, enPassantTarget, halfMoveClock, fullMoveNumber;
-
-    iss >> piecePlacement >> activeColor >> castlingAllowed >> enPassantTarget >> halfMoveClock >> fullMoveNumber;
 
     // start from top left
     size_t current_square = 56;
@@ -310,6 +345,7 @@ void Board::setFEN(std::string fen)
         }
     }
 
+    state.enPassantSquare = -1;
     if (enPassantTarget != "-")
     {
         state.enPassantSquare = coordsToIndex(enPassantTarget);
@@ -805,7 +841,9 @@ void Board::makeMove(Move move)
     history.arrayHistory.push_back(squares);
     Color movingColor = squares[static_cast<size_t>(move.from)].color;
 
-    if (!(squares[static_cast<size_t>(move.from)].type == PieceType::Pawn))
+    if (squares[static_cast<size_t>(move.from)].type != PieceType::Pawn &&
+        move.type != MoveType::Capture &&
+        move.type != MoveType::EnPassant)
     {
         state.halfMoveClock += 1;
     }
@@ -814,7 +852,7 @@ void Board::makeMove(Move move)
         state.halfMoveClock = 0;
     }
 
-    //clear en passant
+    // clear en passant
     state.enPassantSquare = -1;
 
     switch (move.type)
@@ -896,7 +934,7 @@ void Board::makeMove(Move move)
         squares[static_cast<size_t>(move.from)] = Piece{PieceType::None, Color::None};
         break;
     }
-    
+
     if (state.sideToMove == Color::White)
     {
         state.sideToMove = Color::Black;
@@ -910,6 +948,11 @@ void Board::makeMove(Move move)
 
 void Board::unMakeMove()
 {
+    if (history.stateHistory.empty() || history.arrayHistory.empty())
+    {
+        throw std::logic_error("Cannot undo move: move history is empty");
+    }
+
     state = history.stateHistory.back();
     squares = history.arrayHistory.back();
     history.stateHistory.pop_back();
@@ -947,7 +990,7 @@ std::string Board::indexToCoords(int sq)
 std::string Board::getFEN()
 {
     std::string outputString;
-    int emptyCount;
+    int emptyCount = 0;
     for (int rank = 7; rank >= 0; rank--)
     {
         for (int file = 0; file < 8; file++)
