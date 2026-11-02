@@ -270,7 +270,6 @@ Move findBestMove(Board &board, int maxDepth, double timeLimit)
 
     Move bestMove = moves[0];
     size_t bestIndex = 0;
-    int bestScore = NEG_INF;
     int highestDepth = 0;
 
     // Iterative deepening
@@ -316,7 +315,6 @@ Move findBestMove(Board &board, int maxDepth, double timeLimit)
         std::swap(moves[0], moves[bestIndex]);
 
         bestMove = currentBestMove;
-        bestScore = currentBestScore;
         highestDepth = depth;
     }
 

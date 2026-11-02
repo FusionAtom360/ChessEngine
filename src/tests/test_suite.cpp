@@ -219,8 +219,15 @@ static void test_move_ordering_prioritizes_check()
     board.setFEN("4k3/8/8/8/8/8/3Q4/4K3 w - - 0 1");
     MoveList moves = generateOrderedMoves(board);
 
-    report(!moves.empty() && moves[0].from == board.coordsToIndex("d2") &&
-               moves[0].to == board.coordsToIndex("d8"),
+    bool firstMoveGivesCheck = false;
+    if (!moves.empty())
+    {
+        board.makeMove(moves[0]);
+        firstMoveGivesCheck = board.kingInCheck(board.sideToMove());
+        board.unMakeMove();
+    }
+
+    report(firstMoveGivesCheck,
            "Move ordering prioritizes checking move");
 }
 
